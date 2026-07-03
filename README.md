@@ -1,0 +1,44 @@
+# Malaysia Housing Prices Prediction
+
+An Data Science project designed to analyze and predict housing prices in Malaysia using real estate datasets. This
+project explores data preprocessing, exploratory data analysis (EDA), feature engineering, and compares multiple
+regression models to deliver an accurate price forecasting system.
+
+Built as a collaborative data science assignment by a team of 4 members.
+
+---
+
+## 📂 Project Structure
+
+This project adopts a modular production-ready Python architecture to ensure smooth collaboration and version control.
+
+```text
+Housing-Prices-Malaysia/
+│
+├── data/                      # Data storage (Git ignored large files)
+│   ├── raw/                   # Raw CSV dataset from source
+│   └── processed/             # Cleaned and engineered dataset ready for modeling
+│
+├── src/                       # Core source code
+│   ├── __init__.py            # Treats src as a Python package
+│   ├── data_preprocessing.py  # Script for handling missing values, outliers, & encoding
+│   ├── utils.py               # Shared utility functions (e.g., standardized evaluation metrics)
+│   │
+│   └── models/                # Model training scripts (one per member)
+│       ├── __init__.py
+│       ├── train_linear_reg.py   # Baseline: Multiple Linear Regression
+│       ├── train_decision_tree.py# Model 2: Decision Tree Regressor
+│       ├── train_random_forest.py# Model 3: Random Forest Regressor
+│       └── train_svr.py      # Model 4: Support Vector Regression (SVR)
+│
+├── prototype/                 # Compulsory Deployment Prototype
+│   ├── app.py                 # Streamlit web application
+│   ├── best_model.pkl         # Serialized weights of the top-performing model
+│   └── requirements.txt       # Python dependencies list
+│
+├── report_assets/             # Visualizations for the written report
+│   └── plots/                 # Auto-generated charts (EDA, Feature Importance, etc.)
+│
+├── download_data.py           # Utility script to fetch data from Hugging Face
+├── .gitignore                 # Specifies intentionally untracked files to ignore
+└── README.md                  # Project documentation
