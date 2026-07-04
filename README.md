@@ -24,12 +24,12 @@ Housing-Prices-Malaysia/
 │   ├── data_preprocessing.py  # Script for handling missing values, outliers, & encoding
 │   ├── utils.py               # Shared utility functions (e.g., standardized evaluation metrics)
 │   │
-│   └── models/                # Model training scripts (one per member)
+│   └── models/                     # Model training scripts (one per member)
 │       ├── __init__.py
-│       ├── train_linear_reg.py   # Baseline: Multiple Linear Regression
-│       ├── train_decision_tree.py# Model 2: Decision Tree Regressor
-│       ├── train_random_forest.py# Model 3: Random Forest Regressor
-│       └── train_svr.py      # Model 4: Support Vector Regression (SVR)
+│       ├── train_linear_reg.py     # Baseline: Multiple Linear Regression
+│       ├── train_xgboost.py        # Model 2: XGBoost Regressor
+│       ├── train_random_forest.py  # Model 3: Random Forest Regressor
+│       └── train_svr.py            # Model 4: Support Vector Regression (SVR)
 │
 ├── prototype/                 # Compulsory Deployment Prototype
 │   ├── app.py                 # Streamlit web application
@@ -39,6 +39,5 @@ Housing-Prices-Malaysia/
 ├── report_assets/             # Visualizations for the written report
 │   └── plots/                 # Auto-generated charts (EDA, Feature Importance, etc.)
 │
-├── download_data.py           # Utility script to fetch data from Hugging Face
 ├── .gitignore                 # Specifies intentionally untracked files to ignore
 └── README.md                  # Project documentation
