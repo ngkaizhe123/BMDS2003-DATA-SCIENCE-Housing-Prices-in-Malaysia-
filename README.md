@@ -21,6 +21,7 @@ Housing-Prices-Malaysia/
 │
 ├── src/                       # Core source code
 │   ├── __init__.py            # Treats src as a Python package
+│   ├── eda.py                 # Exploratory Data Analysis script
 │   ├── data_preprocessing.py  # Script for handling missing values, outliers, & encoding
 │   ├── utils.py               # Shared utility functions (e.g., standardized evaluation metrics)
 │   │
@@ -33,11 +34,11 @@ Housing-Prices-Malaysia/
 │
 ├── prototype/                 # Compulsory Deployment Prototype
 │   ├── app.py                 # Streamlit web application
-│   ├── best_model.pkl         # Serialized weights of the top-performing model
-│   └── requirements.txt       # Python dependencies list
+│   └── best_model.pkl         # Serialized weights of the top-performing model
 │
 ├── report_assets/             # Visualizations for the written report
 │   └── plots/                 # Auto-generated charts (EDA, Feature Importance, etc.)
 │
 ├── .gitignore                 # Specifies intentionally untracked files to ignore
+├── requirements.txt           # Python dependencies
 └── README.md                  # Project documentation
