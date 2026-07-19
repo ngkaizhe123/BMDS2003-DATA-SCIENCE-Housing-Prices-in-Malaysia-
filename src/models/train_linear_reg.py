@@ -12,7 +12,13 @@ sys.path.append(str(project_root.parent / "src"))
 sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
-from src.utils import load_dataset, split_dataset, build_preprocessor, print_metrics, save_model
+from src.utils import (
+    load_dataset,
+    split_dataset,
+    build_preprocessor,
+    print_metrics,
+    save_model,
+)
 
 
 def main():
@@ -26,7 +32,9 @@ def main():
     print("Running data preprocessing pipeline...")
     df = run_preprocessing_pipeline(df)
     print("Splitting data...")
-    X_train, X_test, y_train, y_test = split_dataset(df, categorical_features, numerical_features)
+    X_train, X_test, y_train, y_test = split_dataset(
+        df, categorical_features, numerical_features
+    )
 
     # Build preprocessor using utils
     print("Building preprocessing pipelines...")

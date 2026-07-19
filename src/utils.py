@@ -8,6 +8,7 @@ import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
+
 def load_dataset(project_root):
     data_path = (
         project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
@@ -40,6 +41,7 @@ def build_preprocessor(numerical_features, categorical_features):
             ("cat", categorical_transformer, categorical_features),
         ]
     )
+
 
 def print_metrics(model_name, y_true, y_pred):
     mae = mean_absolute_error(y_true, y_pred)
