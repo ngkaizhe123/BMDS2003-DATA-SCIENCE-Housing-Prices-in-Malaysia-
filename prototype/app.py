@@ -6,19 +6,25 @@ import seaborn as sns
 from pathlib import Path
 
 # 1. CONFIGURATION & CORE LAYOUT
-st.set_page_config(
-    page_title="Housing Baseline Model", page_icon="🏠", layout="centered"
-)
+st.set_page_config(page_title="Housing Model Predictor", page_icon="🏠", layout="wide")
 
 
 # 2. BACKEND SERVICE LAYER (Internal Functions)
 @st.cache_resource
-def load_baseline_model():
+def load_models():
+    """Loads all available models from the prototype directory."""
     prototype_dir = Path(__file__).resolve().parent
-    model_path = prototype_dir / "linear_regression.pkl"
-    if not model_path.exists():
-        return None
-    return joblib.load(model_path)
+    models = {}
+
+    lr_path = prototype_dir / "linear_regression.pkl"
+    if lr_path.exists():
+        models["Multiple Linear Regression"] = joblib.load(lr_path)
+
+    xgb_path = prototype_dir / "xgboost_regression.pkl"
+    if xgb_path.exists():
+        models["XGBoost Regression"] = joblib.load(xgb_path)
+
+    return models
 
 
 def predict_price(model, input_dict: dict) -> float:
@@ -26,7 +32,7 @@ def predict_price(model, input_dict: dict) -> float:
     return float(model.predict(df)[0])
 
 
-def plot_market_comparison(state, prop_type, predicted_price):
+def plot_market_comparison(state, prop_type, predicted_price, title="Market Benchmark"):
     prototype_dir = Path(__file__).resolve().parent
     project_root = prototype_dir.parent
     data_path = project_root / "data" / "raw" / "malaysia_house_price_data_2025.csv"
@@ -68,7 +74,7 @@ def plot_market_comparison(state, prop_type, predicted_price):
         )
 
     ax.set_title(
-        f"Market Benchmark: Where your property stands in {state}",
+        f"{title}: Where your property stands in {state}",
         pad=20,
         fontsize=14,
         fontweight="bold",
@@ -79,187 +85,253 @@ def plot_market_comparison(state, prop_type, predicted_price):
     st.pyplot(fig)
 
 
-# 3. FRONTEND UI & CONTROLLER LAYOUT
-def main():
-    # Mimic the PDF Top Navigation using Streamlit Tabs
-    st.title("🏠 Malaysia Housing Price Predictor")
-    tab1, tab2 = st.tabs(["🎯 Single Property Prediction", "📊 Model Analytics"])
+def render_input_form(form_key):
+    """Renders the common property feature input form."""
+    st.info(
+        "💡 **Tip:** Use a preset below to auto-fill the form, or enter your own custom details."
+    )
+    preset_choice = st.selectbox(
+        "Auto Input Data (Optional):",
+        [
+            "Custom Input (Manual)",
+            "Sample: Luxury Condo in KL",
+            "Sample: Standard Terrace in Johor",
+            "Sample: Affordable Flat in Penang",
+        ],
+        key=f"preset_{form_key}",
+    )
 
-    model = load_baseline_model()
+    # Preset logic
+    default_state, default_area, default_tenure, default_type, default_tx = (
+        "Selangor",
+        "",
+        "Freehold",
+        "Terrace House",
+        10,
+    )
 
-    with tab1:
-        st.markdown(
-            "Enter details below to generate a prediction via the **Multiple Linear Regression Baseline**."
-        )
-        if model is None:
-            st.error(
-                "No baseline model structure detected in `/prototype`. Please run your training script first."
-            )
-            return
-
-        # AUTO-INPUT FEATURE (Inspired by PDF prototype)
-        st.info(
-            "💡 **Tip:** Use a preset below to auto-fill the form, or enter your own custom details."
-        )
-        preset_choice = st.selectbox(
-            "Auto Input Data (Optional):",
-            [
-                "Custom Input (Manual)",
-                "Sample: Luxury Condo in KL",
-                "Sample: Standard Terrace in Johor",
-                "Sample: Affordable Flat in Penang",
-            ],
-        )
-
-        # Preset logic
+    if preset_choice == "Sample: Luxury Condo in KL":
         default_state, default_area, default_tenure, default_type, default_tx = (
-            "Selangor",
-            "",
+            "Kuala Lumpur",
+            "Mont Kiara",
+            "Freehold",
+            "Condominium",
+            45,
+        )
+    elif preset_choice == "Sample: Standard Terrace in Johor":
+        default_state, default_area, default_tenure, default_type, default_tx = (
+            "Johor",
+            "Skudai",
             "Freehold",
             "Terrace House",
-            10,
+            120,
         )
-        if preset_choice == "Sample: Luxury Condo in KL":
-            default_state, default_area, default_tenure, default_type, default_tx = (
+    elif preset_choice == "Sample: Affordable Flat in Penang":
+        default_state, default_area, default_tenure, default_type, default_tx = (
+            "Penang",
+            "Ayer Itam",
+            "Leasehold",
+            "Flat",
+            35,
+        )
+
+    user_features = None
+    with st.form(form_key):
+        st.subheader("Property Features")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            state_options = [
                 "Kuala Lumpur",
-                "Mont Kiara",
-                "Freehold",
-                "Condominium",
-                45,
-            )
-        elif preset_choice == "Sample: Standard Terrace in Johor":
-            default_state, default_area, default_tenure, default_type, default_tx = (
+                "Selangor",
                 "Johor",
-                "Skudai",
-                "Freehold",
-                "Terrace House",
-                120,
-            )
-        elif preset_choice == "Sample: Affordable Flat in Penang":
-            default_state, default_area, default_tenure, default_type, default_tx = (
                 "Penang",
-                "Ayer Itam",
-                "Leasehold",
-                "Flat",
-                35,
+                "Perak",
+                "Negeri Sembilan",
+                "Melaka",
+                "Kedah",
+                "Pahang",
+                "Terengganu",
+                "Kelantan",
+                "Perlis",
+                "Sabah",
+                "Sarawak",
+            ]
+            state = st.selectbox(
+                "State", options=state_options, index=state_options.index(default_state)
+            )
+            area = st.text_input(
+                "Area / Township",
+                value=default_area,
+                placeholder="e.g., Cheras, Skudai",
+            )
+            tenure = st.selectbox(
+                "Tenure",
+                options=["Freehold", "Leasehold"],
+                index=0 if default_tenure == "Freehold" else 1,
             )
 
-        # Render Prediction Form Input
-        user_features = None
-        with st.form("prediction_form"):
-            st.subheader("Property Features")
-            col1, col2 = st.columns(2)
+        with col2:
+            type_options = [
+                "Terrace House",
+                "Condominium",
+                "Apartment",
+                "Semi D",
+                "Bungalow",
+                "Service Residence",
+                "Flat",
+                "Cluster House",
+                "Town House",
+            ]
+            prop_type = st.selectbox(
+                "Property Type",
+                options=type_options,
+                index=type_options.index(default_type),
+            )
+            transactions = st.number_input(
+                "Number of Transactions", min_value=1, value=default_tx
+            )
 
-            with col1:
-                state_options = [
-                    "Kuala Lumpur",
-                    "Selangor",
-                    "Johor",
-                    "Penang",
-                    "Perak",
-                    "Negeri Sembilan",
-                    "Melaka",
-                    "Kedah",
-                    "Pahang",
-                    "Terengganu",
-                    "Kelantan",
-                    "Perlis",
-                    "Sabah",
-                    "Sarawak",
-                ]
-                state = st.selectbox(
-                    "State",
-                    options=state_options,
-                    index=state_options.index(default_state),
-                )
-                area = st.text_input(
-                    "Area / Township",
-                    value=default_area,
-                    placeholder="e.g., Cheras, Skudai",
-                )
-                tenure = st.selectbox(
-                    "Tenure",
-                    options=["Freehold", "Leasehold"],
-                    index=0 if default_tenure == "Freehold" else 1,
-                )
+        submitted = st.form_submit_button("Predict Price", use_container_width=True)
 
-            with col2:
-                type_options = [
-                    "Terrace House",
-                    "Condominium",
-                    "Apartment",
-                    "Semi D",
-                    "Bungalow",
-                    "Service Residence",
-                    "Flat",
-                    "Cluster House",
-                    "Town House",
-                ]
-                prop_type = st.selectbox(
-                    "Property Type",
-                    options=type_options,
-                    index=type_options.index(default_type),
-                )
-                transactions = st.number_input(
-                    "Number of Transactions", min_value=1, value=default_tx
-                )
+        if submitted:
+            if not area.strip():
+                st.warning("Please enter an Area or Township name before submitting.")
+            else:
+                user_features = {
+                    "Area": area.strip().title(),
+                    "State": state,
+                    "Tenure": tenure,
+                    "Type": prop_type,
+                    "Transactions": transactions,
+                }
 
-            submitted = st.form_submit_button("Predict Price", use_container_width=True)
+    return user_features
 
-            if submitted:
-                if not area.strip():
-                    st.warning(
-                        "Please enter an Area or Township name before submitting."
-                    )
-                else:
-                    user_features = {
-                        "Area": area.strip(),
-                        "State": state,
-                        "Tenure": tenure,
-                        "Type": prop_type,
-                        "Transactions": transactions,
-                    }
 
-        # Handle Form Submission Inference
+# 3. FRONTEND UI & CONTROLLER LAYOUT
+def main():
+    st.title("🏠 Malaysia Housing Price Predictor")
+
+    models = load_models()
+    if not models:
+        st.error(
+            "No models detected in `/prototype`. Please run your training scripts first."
+        )
+        return
+
+    tab1, tab2, tab3 = st.tabs(
+        ["🎯 Single Prediction", "⚖️ Model Comparison", "📊 Model Analytics"]
+    )
+
+    # --- TAB 1: SINGLE PREDICTION ---
+    with tab1:
+        st.markdown("Select a model and enter details below to generate a prediction.")
+
+        selected_model_name = st.selectbox("Select Model to Use:", list(models.keys()))
+        selected_model = models[selected_model_name]
+
+        user_features = render_input_form("single_prediction_form")
+
         if user_features:
             try:
-                pred = predict_price(model, user_features)
+                pred = predict_price(selected_model, user_features)
                 st.success("Analysis Complete!")
                 st.metric(
-                    label="Estimated Baseline Median Price", value=f"RM {pred:,.2f}"
+                    label=f"Estimated Median Price ({selected_model_name})",
+                    value=f"RM {pred:,.2f}",
                 )
 
-                # Render Comparative Visualizations
                 st.markdown("---")
                 plot_market_comparison(
-                    user_features["State"], user_features["Type"], pred
+                    user_features["State"],
+                    user_features["Type"],
+                    pred,
+                    title=f"Market Benchmark ({selected_model_name})",
                 )
-
             except Exception as e:
                 st.error(f"Inference pipeline issue: {e}")
 
+    # --- TAB 2: MODEL COMPARISON ---
     with tab2:
-        st.subheader("Model Evaluation")
+        st.subheader("Model Comparison Tool")
         st.markdown(
-            "Baseline Multiple Linear Regression performance metrics and evaluation plots."
+            "Run the same property features through all available models to compare their predictions side-by-side."
         )
 
-        # Load the saved evaluation plot from report_assets
-        prototype_dir = Path(__file__).resolve().parent
-        plot_path = (
-            prototype_dir.parent
-            / "report_assets"
-            / "plots"
-            / "actual_vs_predicted_advanced.png"
-        )
-
-        if plot_path.exists():
-            st.image(
-                str(plot_path), caption="Actual vs Predicted Values (Linear Regression)"
-            )
-        else:
+        if len(models) < 2:
             st.info(
-                "Evaluation plot not found. Run `python src/model_visual.py` to generate it."
+                "You need at least 2 models trained to compare. Currently only one model is loaded."
+            )
+
+        comp_features = render_input_form("comparison_form")
+
+        if comp_features:
+            st.markdown("### Prediction Results")
+            cols = st.columns(len(models))
+
+            predictions = {}
+            for idx, (m_name, m_obj) in enumerate(models.items()):
+                try:
+                    pred = predict_price(m_obj, comp_features)
+                    predictions[m_name] = pred
+                    cols[idx].metric(label=m_name, value=f"RM {pred:,.2f}")
+                except Exception as e:
+                    cols[idx].error(f"Error with {m_name}: {e}")
+
+            if predictions:
+                st.markdown("---")
+                # Plot side-by-side comparison
+                fig, ax = plt.subplots(figsize=(8, 5))
+                sns.barplot(
+                    x=list(predictions.keys()),
+                    y=list(predictions.values()),
+                    ax=ax,
+                    palette="Set2",
+                    legend=False,
+                    hue=list(predictions.keys()),
+                )
+                ax.set_title("Model Prediction Comparison", fontweight="bold")
+                ax.set_ylabel("Predicted Price (RM)")
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda x, p: format(int(x), ","))
+                )
+
+                # Add value labels on top of bars
+                for p in ax.patches:
+                    ax.annotate(
+                        f"RM {p.get_height():,.0f}",
+                        (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                        ha="center",
+                        va="bottom",
+                        xytext=(0, 5),
+                        textcoords="offset points",
+                    )
+
+                st.pyplot(fig)
+
+    # --- TAB 3: MODEL ANALYTICS ---
+    with tab3:
+        st.subheader("Model Evaluation")
+        st.markdown("View training metrics and evaluation plots.")
+
+        prototype_dir = Path(__file__).resolve().parent
+        plots_dir = prototype_dir.parent / "report_assets" / "plots"
+
+        plot_files = {
+            "Linear Regression": plots_dir / "actual_vs_predicted_advanced.png",
+            "XGBoost": plots_dir / "actual_vs_predicted_xgboost.png",
+        }
+
+        found_plot = False
+        for name, path in plot_files.items():
+            if path.exists():
+                st.image(str(path), caption=f"Actual vs Predicted Values ({name})")
+                found_plot = True
+
+        if not found_plot:
+            st.info(
+                "Evaluation plots not found. Run your visualization scripts to generate them."
             )
 
 

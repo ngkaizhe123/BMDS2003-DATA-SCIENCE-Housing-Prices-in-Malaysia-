@@ -1,0 +1,98 @@
+import numpy as np
+import sys
+from pathlib import Path
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.pipeline import Pipeline
+from xgboost import XGBRegressor
+from sklearn.compose import TransformedTargetRegressor
+
+# Point python path cleanly to src
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent.parent
+sys.path.append(str(project_root.parent / "src"))
+sys.path.append(str(project_root))
+
+from src.data_preprocessing import run_preprocessing_pipeline
+from src.utils import load_dataset, split_dataset, build_preprocessor, print_metrics, save_model
+
+
+def main():
+    model_output_path = project_root / "prototype" / "xgboost_regression.pkl"
+
+    categorical_features = ["Area", "State", "Tenure", "Type"]
+    numerical_features = ["Transactions"]
+
+    # Load, preprocess and split dataset using utils
+    df = load_dataset(project_root)
+
+    print("Running data preprocessing pipeline...")
+    # Running it again ensures data is clean, though it may be slightly redundant
+    # if the CSV is already cleaned. Kept here for consistency with other scripts.
+    df = run_preprocessing_pipeline(df)
+
+    print("Splitting data...")
+    # This effectively drops Township and Median_PSF, preventing data leakage
+    X_train, X_test, y_train, y_test = split_dataset(df, categorical_features, numerical_features)
+
+    # Build preprocessor using utils
+    print("Building preprocessing pipelines...")
+    preprocessor = build_preprocessor(numerical_features, categorical_features)
+
+    print("Training XGBoost Regression model...")
+    # Wrap XGBRegressor in TransformedTargetRegressor to handle the right-skewed target variable
+    model_pipeline = TransformedTargetRegressor(
+        regressor=Pipeline(
+            steps=[
+                ("preprocessor", preprocessor),
+                (
+                    "regressor",
+                    XGBRegressor(
+                        random_state=42, n_jobs=-1, objective="reg:squarederror"
+                    ),
+                ),
+            ]
+        ),
+        func=np.log1p,
+        inverse_func=np.expm1,
+    )
+
+    param_dist = {
+        "regressor__regressor__n_estimators": [100, 200, 300, 500],
+        "regressor__regressor__max_depth": [3, 4, 5, 6],
+        "regressor__regressor__learning_rate": [0.01, 0.05, 0.1],
+        "regressor__regressor__subsample": [0.8, 0.9, 1.0],
+        "regressor__regressor__colsample_bytree": [0.8, 0.9, 1.0],
+        "regressor__regressor__min_child_weight": [1, 3, 5],
+    }
+
+    print("Implementing RandomizedSearchCV for hyperparameter tuning...")
+    search = RandomizedSearchCV(
+        estimator=model_pipeline,
+        param_distributions=param_dist,
+        n_iter=30,
+        cv=5,
+        scoring="r2",
+        random_state=42,
+        n_jobs=-1,
+    )
+    print("Fitting the model with RandomizedSearchCV...")
+    search.fit(X_train, y_train)
+    print("Evaluating model...")
+
+    # y_pred = model_pipeline.predict(X_test)
+    best_model = search.best_estimator_
+    y_pred = best_model.predict(X_test)
+
+    # Print metrics using utils
+    print_metrics("XGBoost", y_test, y_pred)
+
+    print(f"Best parameters found: {search.best_params_}")
+    print(f"Best Model R2 Score: {search.best_score_}")
+    print("-" * 30)
+
+    # Save model using utils
+    save_model(best_model, model_output_path)
+
+
+if __name__ == "__main__":
+    main()
