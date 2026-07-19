@@ -4,11 +4,15 @@ import sys
 from pathlib import Path
 
 
-def handle_missing_values(df: pd.DataFrame, target_col: str = 'Median_Price') -> pd.DataFrame:
+def handle_missing_values(
+    df: pd.DataFrame, target_col: str = "Median_Price"
+) -> pd.DataFrame:
     df_clean = df.copy()
     df_clean = df_clean.dropna(subset=[target_col])
-    if 'Transactions' in df_clean.columns:
-        df_clean['Transactions'] = df_clean['Transactions'].fillna(df_clean['Transactions'].median())
+    if "Transactions" in df_clean.columns:
+        df_clean["Transactions"] = df_clean["Transactions"].fillna(
+            df_clean["Transactions"].median()
+        )
     return df_clean
 
 
@@ -26,16 +30,16 @@ def standardize_text_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     for col in columns:
         if col in df_clean.columns:
             df_clean[col] = df_clean[col].astype(str).str.strip().str.title()
-            df_clean[col] = df_clean[col].replace(r'\s+', ' ', regex=True)
+            df_clean[col] = df_clean[col].replace(r"\s+", " ", regex=True)
     return df_clean
 
 
 def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print(f"[*] Initial dataset shape: {df.shape}")
-    df = handle_missing_values(df, target_col='Median_Price')
-    text_cols_to_clean = ['Area', 'State', 'Tenure', 'Type']
+    df = handle_missing_values(df, target_col="Median_Price")
+    text_cols_to_clean = ["Area", "State", "Tenure", "Type"]
     df = standardize_text_columns(df, text_cols_to_clean)
-    df = remove_outliers_iqr(df, 'Median_Price')
+    df = remove_outliers_iqr(df, "Median_Price")
     print(f"[*] Shape after preprocessing: {df.shape}")
     return df
 
@@ -46,9 +50,9 @@ if __name__ == "__main__":
     current_dir = Path(__file__).resolve().parent
     project_root = current_dir.parent
 
-    input_path = project_root / 'data' / 'raw' / 'malaysia_house_price_data_2025.csv'
-    output_dir = project_root / 'data' / 'processed'
-    output_path = output_dir / 'cleaned_malaysia_house_prices.csv'
+    input_path = project_root / "data" / "raw" / "malaysia_house_price_data_2025.csv"
+    output_dir = project_root / "data" / "processed"
+    output_path = output_dir / "cleaned_malaysia_house_prices.csv"
 
     print(f"Loading raw data from {input_path}...")
     try:
