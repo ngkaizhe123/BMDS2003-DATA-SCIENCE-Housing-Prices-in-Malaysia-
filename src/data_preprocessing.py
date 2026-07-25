@@ -34,11 +34,46 @@ def standardize_text_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     return df_clean
 
 
+def clean_tenure(df: pd.DataFrame) -> pd.DataFrame:
+    df_clean = df.copy()
+    if "Tenure" in df_clean.columns:
+        df_clean["Tenure"] = df_clean["Tenure"].replace(
+            {
+                "Freehold, Leasehold": "Freehold and Leasehold",
+                "Leasehold, Freehold": "Freehold and Leasehold",
+            }
+        )
+    return df_clean
+
+
+def multi_hot_encode_type(df: pd.DataFrame) -> pd.DataFrame:
+    df_clean = df.copy()
+
+    if "Type" in df_clean.columns:
+        type_dummies = df_clean["Type"].str.get_dummies(sep=", ").add_prefix("Type_")
+
+        df_clean = pd.concat([df_clean.drop(columns=["Type"]), type_dummies], axis=1)
+
+    return df_clean
+
+
 def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print(f"[*] Initial dataset shape: {df.shape}")
+
     df = handle_missing_values(df, target_col="Median_Price")
+
     text_cols_to_clean = ["Area", "State", "Tenure", "Type"]
+
     df = standardize_text_columns(df, text_cols_to_clean)
+    print("Before cleaning:")
+    print(df["Tenure"].value_counts())
+    df = clean_tenure(df)
+    print("\nAfter cleaning:")
+    print(df["Tenure"].value_counts())
+
+    # Multi-Hot Encoding for Property Type
+    df = multi_hot_encode_type(df)
+
     df = remove_outliers_iqr(df, "Median_Price")
     print(f"[*] Shape after preprocessing: {df.shape}")
     return df

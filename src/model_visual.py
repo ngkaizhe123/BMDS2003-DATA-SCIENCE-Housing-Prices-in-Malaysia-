@@ -1,99 +1,104 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import joblib
 import sys
 from pathlib import Path
-from sklearn.model_selection import train_test_split
 
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent
 sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
+from src.utils import load_dataset, split_dataset, load_model
 
 
-def main():
-    data_path = project_root / "data" / "raw" / "malaysia_house_price_data_2025.csv"
-    model_path = project_root / "prototype" / "linear_regression.pkl"
+def plot_residual_analysis(model_filename="xgboost_regression.pkl", model_title="XGBoost"):
+    prototype_dir = project_root / "prototype"
+    model_path = prototype_dir / model_filename
     output_dir = project_root / "report_assets" / "plots"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_csv(data_path)
+    if not model_path.exists():
+        print(f"Error: Model file {model_path} does not exist. Please train the model first.")
+        return
+
+    # Load dataset & model
+    df = load_dataset(project_root)
     df = run_preprocessing_pipeline(df)
 
-    X = df[["Area", "State", "Tenure", "Type", "Transactions"]]
-    y = df["Median_Price"]
-    _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    categorical_features = ["Area", "State", "Tenure"]
+    if "Type" in df.columns:
+        categorical_features.append("Type")
+    numerical_features = ["Transactions"]
+    type_features = [col for col in df.columns if col.startswith("Type_")]
 
-    model = joblib.load(model_path)
-    y_pred = model.predict(X_test)
-
-    # Sort values to create a continuous "trend" line chart rather than scattered dots
-    results_df = pd.DataFrame({"Actual": y_test, "Predicted": y_pred})
-    results_df = results_df.sort_values(by="Actual").reset_index(drop=True)
-
-    plt.figure(figsize=(12, 6))
-
-    # Plot Actual vs Predicted as overlapping lines mimicking a trading chart
-    plt.plot(
-        results_df.index,
-        results_df["Actual"],
-        color="indianred",
-        alpha=0.7,
-        label="Actual Price",
-        linewidth=1.5,
-    )
-    plt.plot(
-        results_df.index,
-        results_df["Predicted"],
-        color="royalblue",
-        alpha=0.8,
-        label="Predicted Price",
-        linewidth=1.5,
+    X_train, X_test, y_train, y_test = split_dataset(
+        df, categorical_features, numerical_features, type_features
     )
 
-    # Add a vertical marker and badge mimicking the PDF's "Prediction Start Date"
-    # We will use this to mark where luxury properties (top 20%) begin
-    luxury_threshold_idx = int(len(results_df) * 0.8)
-    luxury_price = results_df["Actual"].iloc[luxury_threshold_idx]
+    model = load_model(model_path)
 
-    plt.axvline(
-        x=luxury_threshold_idx, color="#00b894", linestyle="-", linewidth=1.5, alpha=0.5
-    )
-    plt.text(
-        luxury_threshold_idx,
-        plt.ylim()[1] * 0.9,
-        " Luxury Property Threshold ",
-        color="white",
-        backgroundcolor="#00b894",
-        weight="bold",
-        fontsize=10,
-        ha="center",
-    )
+    y_train_pred = model.predict(X_train)
+    y_test_pred = model.predict(X_test)
 
-    # Formatting to look highly professional
-    plt.gca().yaxis.set_major_formatter(
-        plt.FuncFormatter(lambda x, p: format(int(x), ","))
-    )
-    plt.xlabel("Test Samples (Sorted by Price)", fontsize=10)
-    plt.ylabel("Price (RM)", fontsize=10)
-    plt.title(
-        "Baseline Linear Regression: Actual vs Predicted Price Trend",
-        fontsize=14,
-        fontweight="bold",
-        pad=20,
-    )
-    plt.legend(loc="upper left")
+    residuals_train = y_train - y_train_pred
+    residuals_test = y_test - y_test_pred
 
-    # Light grid mimicking the trading chart background
-    plt.grid(True, axis="y", linestyle="-", alpha=0.3)
-    plt.gca().spines["top"].set_visible(False)
-    plt.gca().spines["right"].set_visible(False)
+    sns.set_theme(style="whitegrid")
+
+    # -------------------------------------------------------------
+    # Figure 1: Actual vs Predicted (Train & Test Comparison)
+    # -------------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(9, 7))
+
+    ax.scatter(y_train, y_train_pred, color="dodgerblue", alpha=0.5, edgecolors="none", label=f"Train Data (R² = {model.score(X_train, y_train):.4f})")
+    ax.scatter(y_test, y_test_pred, color="crimson", alpha=0.7, edgecolors="k", linewidth=0.5, label=f"Test Data")
+
+    # Ideal 1:1 Reference Line (Perfect Prediction Line)
+    max_val = max(y_train.max(), y_test.max())
+    min_val = min(y_train.min(), y_test.min())
+    ax.plot([min_val, max_val], [min_val, max_val], "k--", lw=2, label="Ideal Prediction (y = x)")
+
+    ax.set_title(f"{model_title}: Actual vs. Predicted Prices", fontsize=14, fontweight="bold", pad=15)
+    ax.set_xlabel("Actual Price (RM)", fontsize=11)
+    ax.set_ylabel("Predicted Price (RM)", fontsize=11)
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"RM {int(x):,}"))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"RM {int(x):,}"))
+    ax.legend(loc="upper left")
 
     plt.tight_layout()
-    plt.savefig(output_dir / "actual_vs_predicted_advanced.png", dpi=300)
-    print("✅ Saved report_assets/plots/actual_vs_predicted_advanced.png")
+    act_vs_pred_path = output_dir / f"actual_vs_predicted_{model_title.lower().replace(' ', '_')}.png"
+    plt.savefig(act_vs_pred_path, dpi=300)
+    plt.close()
+    print(f"✅ Saved {act_vs_pred_path}")
+
+    # -------------------------------------------------------------
+    # Figure 2: Residuals vs Predicted (Error Analysis & Heteroscedasticity)
+    # -------------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    ax.scatter(y_test_pred, residuals_test, color="crimson", alpha=0.6, edgecolors="k", linewidth=0.5, label="Test Residuals")
+    ax.axhline(y=0, color="black", linestyle="--", linewidth=2, label="Zero Residual Line (e = 0)")
+
+    ax.set_title(f"{model_title}: Residuals vs. Predicted Values", fontsize=14, fontweight="bold", pad=15)
+    ax.set_xlabel("Predicted Price (RM)", fontsize=11)
+    ax.set_ylabel("Residuals (Actual - Predicted) (RM)", fontsize=11)
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"RM {int(x):,}"))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"RM {int(x):,}"))
+    ax.legend(loc="upper left")
+
+    plt.tight_layout()
+    residual_path = output_dir / f"residuals_vs_predicted_{model_title.lower().replace(' ', '_')}.png"
+    plt.savefig(residual_path, dpi=300)
+    plt.close()
+    print(f"✅ Saved {residual_path}")
+
+
+def main():
+    print("Generating Residual Analysis for XGBoost Regression...")
+    plot_residual_analysis("xgboost_regression.pkl", "XGBoost")
 
 
 if __name__ == "__main__":

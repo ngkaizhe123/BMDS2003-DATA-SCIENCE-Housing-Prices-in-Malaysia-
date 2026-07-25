@@ -21,14 +21,16 @@ def load_dataset(project_root):
         raise FileNotFoundError(f"Dataset not found at {data_path}")
 
 
-def split_dataset(df, categorical_features, numerical_features, target="Median_Price"):
-    X = df[categorical_features + numerical_features]
+def split_dataset(
+    df, categorical_features, numerical_features, type_features, target="Median_Price"
+):
+    X = df[categorical_features + numerical_features + type_features]
     y = df[target]
 
     return train_test_split(X, y, test_size=0.2, random_state=42)
 
 
-def build_preprocessor(numerical_features, categorical_features):
+def build_preprocessor(numerical_features, categorical_features, type_features):
     numeric_transformer = Pipeline([("scaler", StandardScaler())])
 
     categorical_transformer = Pipeline(
@@ -39,6 +41,7 @@ def build_preprocessor(numerical_features, categorical_features):
         [
             ("num", numeric_transformer, numerical_features),
             ("cat", categorical_transformer, categorical_features),
+            ("type", "passthrough", type_features),
         ]
     )
 
