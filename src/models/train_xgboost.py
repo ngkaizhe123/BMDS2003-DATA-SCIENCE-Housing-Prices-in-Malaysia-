@@ -25,7 +25,7 @@ from src.utils import (
 def main():
     model_output_path = project_root / "prototype" / "xgboost_regression.pkl"
 
-    categorical_features = ["Area", "State", "Tenure", "Type"]
+    categorical_features = ["Area", "State", "Tenure"]
     numerical_features = ["Transactions"]
 
     # Load, preprocess and split dataset using utils
@@ -36,15 +36,19 @@ def main():
     # if the CSV is already cleaned. Kept here for consistency with other scripts.
     df = run_preprocessing_pipeline(df)
 
+    type_features = [col for col in df.columns if col.startswith("Type_")]
+
     print("Splitting data...")
     # This effectively drops Township and Median_PSF, preventing data leakage
     X_train, X_test, y_train, y_test = split_dataset(
-        df, categorical_features, numerical_features
+        df, categorical_features, numerical_features, type_features
     )
 
     # Build preprocessor using utils
     print("Building preprocessing pipelines...")
-    preprocessor = build_preprocessor(numerical_features, categorical_features)
+    preprocessor = build_preprocessor(
+        numerical_features, categorical_features, type_features
+    )
 
     print("Training XGBoost Regression model...")
     # Wrap XGBRegressor in TransformedTargetRegressor to handle the right-skewed target variable

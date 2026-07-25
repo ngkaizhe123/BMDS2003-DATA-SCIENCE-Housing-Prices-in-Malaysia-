@@ -167,8 +167,12 @@ def render_input_form(form_key):
             )
             tenure = st.selectbox(
                 "Tenure",
-                options=["Freehold", "Leasehold"],
-                index=0 if default_tenure == "Freehold" else 1,
+                options=["Freehold", "Leasehold", "Freehold and Leasehold"],
+                index=(
+                    0
+                    if default_tenure == "Freehold"
+                    else (1 if default_tenure == "Leasehold" else 2)
+                ),
             )
 
         with col2:
