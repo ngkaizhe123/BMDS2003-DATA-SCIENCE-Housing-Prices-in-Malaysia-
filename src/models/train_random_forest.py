@@ -23,13 +23,14 @@ from src.utils import (
 
 model_output_path = project_root / "prototype" / "random_forest_regression.pkl"
 
-categorical_features = ["Area", "State", "Tenure", "Type"]
+categorical_features = ["Area", "State", "Tenure"]
 numerical_features = ["Transactions"]
 
 # 1. Load, preprocess, and split dataset using group utils
 df = load_dataset(project_root)
 print("Running data preprocessing pipeline...")
 df = run_preprocessing_pipeline(df)
+type_features = [col for col in df.columns if col.startswith("Type_")]
 
 print("Splitting data...")
 X_train, X_test, y_train, y_test = split_dataset(

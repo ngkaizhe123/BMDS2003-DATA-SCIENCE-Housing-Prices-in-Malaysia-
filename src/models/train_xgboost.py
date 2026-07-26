@@ -1,6 +1,8 @@
 import numpy as np
 import sys
 from pathlib import Path
+
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
@@ -25,7 +27,7 @@ from src.utils import (
 def main():
     model_output_path = project_root / "prototype" / "xgboost_regression.pkl"
 
-    categorical_features = ["Area", "State", "Tenure", "Type"]
+    categorical_features = ["Area", "State", "Tenure"]
     numerical_features = ["Transactions"]
 
     # Load, preprocess and split dataset using utils
@@ -36,15 +38,19 @@ def main():
     # if the CSV is already cleaned. Kept here for consistency with other scripts.
     df = run_preprocessing_pipeline(df)
 
+    type_features = [col for col in df.columns if col.startswith("Type_")]
+
     print("Splitting data...")
     # This effectively drops Township and Median_PSF, preventing data leakage
     X_train, X_test, y_train, y_test = split_dataset(
-        df, categorical_features, numerical_features
+        df, categorical_features, numerical_features, type_features
     )
 
     # Build preprocessor using utils
     print("Building preprocessing pipelines...")
-    preprocessor = build_preprocessor(numerical_features, categorical_features)
+    preprocessor = build_preprocessor(
+        numerical_features, categorical_features, type_features
+    )
 
     print("Training XGBoost Regression model...")
     # Wrap XGBRegressor in TransformedTargetRegressor to handle the right-skewed target variable
@@ -90,6 +96,33 @@ def main():
     # y_pred = model_pipeline.predict(X_test)
     best_model = search.best_estimator_
     y_pred = best_model.predict(X_test)
+
+    # =============================
+    # Train vs Test Performance
+    # =============================
+
+    y_train_pred = best_model.predict(X_train)
+
+    train_r2 = r2_score(y_train, y_train_pred)
+    test_r2 = r2_score(y_test, y_pred)
+
+    train_mae = mean_absolute_error(y_train, y_train_pred)
+    test_mae = mean_absolute_error(y_test, y_pred)
+
+    train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
+    test_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    print("\nTrain vs Test Performance")
+    print("-" * 40)
+
+    print(f"Train MAE : RM {train_mae:,.2f}")
+    print(f"Test MAE  : RM {test_mae:,.2f}")
+
+    print(f"Train RMSE: RM {train_rmse:,.2f}")
+    print(f"Test RMSE : RM {test_rmse:,.2f}")
+
+    print(f"Train R²  : {train_r2:.4f}")
+    print(f"Test R²   : {test_r2:.4f}")
 
     # Print metrics using utils
     print_metrics("XGBoost", y_test, y_pred)
