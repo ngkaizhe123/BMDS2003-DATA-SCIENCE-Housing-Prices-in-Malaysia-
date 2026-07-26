@@ -24,6 +24,10 @@ def load_models():
     if xgb_path.exists():
         models["XGBoost Regression"] = joblib.load(xgb_path)
 
+    rf_path = prototype_dir / "random_forest_regression.pkl"
+    if rf_path.exists():
+        models["Random Forest Regression"] = joblib.load(rf_path)
+
     return models
 
 
