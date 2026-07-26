@@ -20,6 +20,10 @@ def load_models():
     if lr_path.exists():
         models["Multiple Linear Regression"] = joblib.load(lr_path)
 
+    svr_path = prototype_dir / "svr_regression.pkl"
+    if svr_path.exists():
+        models["Support Vector Regression"] = joblib.load(svr_path)
+
     xgb_path = prototype_dir / "xgboost_regression.pkl"
     if xgb_path.exists():
         models["XGBoost Regression"] = joblib.load(xgb_path)
@@ -329,6 +333,7 @@ def main():
         plot_files = {
             "Linear Regression": plots_dir / "actual_vs_predicted_advanced.png",
             "XGBoost": plots_dir / "actual_vs_predicted_xgboost.png",
+            "SVR": plots_dir / "actual_vs_predicted_svr.png",
         }
 
         found_plot = False
