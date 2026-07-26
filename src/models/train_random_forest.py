@@ -21,7 +21,6 @@ from src.utils import (
     save_model,
 )
 
-
 model_output_path = project_root / "prototype" / "random_forest_regression.pkl"
 
 categorical_features = ["Area", "State", "Tenure", "Type"]
@@ -45,13 +44,10 @@ print("Training Random Forest Regression model...")
 # Wrap RandomForestRegressor in TransformedTargetRegressor to handle target skewness
 model_pipeline = TransformedTargetRegressor(
     regressor=Pipeline(
-         steps=[
-             ("preprocessor", preprocessor),
-             (
-                 "regressor",
-                 RandomForestRegressor(random_state=42, n_jobs=-1)
-             ),
-         ]
+        steps=[
+            ("preprocessor", preprocessor),
+            ("regressor", RandomForestRegressor(random_state=42, n_jobs=-1)),
+        ]
     ),
     func=np.log1p,
     inverse_func=np.expm1,
@@ -63,7 +59,7 @@ param_dist = {
     "regressor__regressor__max_depth": [12, 15, 17, None],
     "regressor__regressor__min_samples_split": [2, 3, 5],
     "regressor__regressor__min_samples_leaf": [1, 2, 4],
-    "regressor__regressor__max_features": ["sqrt", "log2", None]
+    "regressor__regressor__max_features": ["sqrt", "log2", None],
 }
 
 print("Implementing RandomizedSearchCV for parameter tuning...")
