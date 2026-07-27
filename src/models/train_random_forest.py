@@ -34,12 +34,14 @@ type_features = [col for col in df.columns if col.startswith("Type_")]
 
 print("Splitting data...")
 X_train, X_test, y_train, y_test = split_dataset(
-    df, categorical_features, numerical_features
+    df, categorical_features, numerical_features, type_features
 )
 
 # 2. Build preprocessor matching the existing pipeline setup
 print("Building preprocessing pipelines...")
-preprocessor = build_preprocessor(numerical_features, categorical_features)
+preprocessor = build_preprocessor(
+    numerical_features, categorical_features, type_features
+)
 
 print("Training Random Forest Regression model...")
 # Wrap RandomForestRegressor in TransformedTargetRegressor to handle target skewness

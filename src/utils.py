@@ -70,3 +70,36 @@ def save_model(model, output_path):
 
 def load_model(path):
     return joblib.load(path)
+
+
+def prepare_input_features(input_dict: dict) -> pd.DataFrame:
+    """Formats single-property user inputs into the exact DataFrame structure expected by trained models."""
+    df = pd.DataFrame([input_dict])
+
+    all_type_cols = [
+        "Type_Apartment",
+        "Type_Bungalow",
+        "Type_Cluster House",
+        "Type_Condominium",
+        "Type_Flat",
+        "Type_Semi D",
+        "Type_Service Residence",
+        "Type_Terrace House",
+        "Type_Town House",
+    ]
+
+    if "Type" in df.columns:
+        selected_type = str(df["Type"].iloc[0])
+        selected_types = [t.strip() for t in selected_type.split(",")]
+
+        for col in all_type_cols:
+            raw_type_name = col.replace("Type_", "")
+            df[col] = 1 if raw_type_name in selected_types else 0
+
+        df = df.drop(columns=["Type"])
+    else:
+        for col in all_type_cols:
+            if col not in df.columns:
+                df[col] = 0
+
+    return df
