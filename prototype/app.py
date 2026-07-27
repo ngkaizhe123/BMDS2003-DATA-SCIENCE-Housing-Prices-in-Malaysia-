@@ -32,10 +32,6 @@ def load_models():
     if rf_path.exists():
         models["Random Forest Regression"] = joblib.load(rf_path)
 
-    svr_path = prototype_dir / "svr_regression.pkl"
-    if svr_path.exists():
-        models["SVR Regression"] = joblib.load(svr_path)
-
     return models
 
 
