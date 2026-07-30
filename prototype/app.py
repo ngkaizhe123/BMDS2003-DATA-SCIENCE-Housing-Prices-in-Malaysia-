@@ -20,6 +20,10 @@ def load_models():
     if lr_path.exists():
         models["Multiple Linear Regression"] = joblib.load(lr_path)
 
+    svr_path = prototype_dir / "svr_regression.pkl"
+    if svr_path.exists():
+        models["Support Vector Regression"] = joblib.load(svr_path)
+
     xgb_path = prototype_dir / "xgboost_regression.pkl"
     if xgb_path.exists():
         models["XGBoost Regression"] = joblib.load(xgb_path)
@@ -31,8 +35,41 @@ def load_models():
     return models
 
 
-def predict_price(model, input_dict: dict) -> float:
+def prepare_input_features(input_dict: dict) -> pd.DataFrame:
+    """Formats single-property user inputs into the exact DataFrame structure expected by trained models."""
     df = pd.DataFrame([input_dict])
+
+    all_type_cols = [
+        "Type_Apartment",
+        "Type_Bungalow",
+        "Type_Cluster House",
+        "Type_Condominium",
+        "Type_Flat",
+        "Type_Semi D",
+        "Type_Service Residence",
+        "Type_Terrace House",
+        "Type_Town House",
+    ]
+
+    if "Type" in df.columns:
+        selected_type = str(df["Type"].iloc[0])
+        selected_types = [t.strip() for t in selected_type.split(",")]
+
+        for col in all_type_cols:
+            raw_type_name = col.replace("Type_", "")
+            df[col] = 1 if raw_type_name in selected_types else 0
+
+        df = df.drop(columns=["Type"])
+    else:
+        for col in all_type_cols:
+            if col not in df.columns:
+                df[col] = 0
+
+    return df
+
+
+def predict_price(model, input_dict: dict) -> float:
+    df = prepare_input_features(input_dict)
     return float(model.predict(df)[0])
 
 
@@ -329,6 +366,8 @@ def main():
         plot_files = {
             "Linear Regression": plots_dir / "actual_vs_predicted_advanced.png",
             "XGBoost": plots_dir / "actual_vs_predicted_xgboost.png",
+            "Random Forest": plots_dir / "actual_vs_predictec_randomforest.png",
+            "SVR": plots_dir / "actual_vs_predicted_svr.png",
         }
 
         found_plot = False
