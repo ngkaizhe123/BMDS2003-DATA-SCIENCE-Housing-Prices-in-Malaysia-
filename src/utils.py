@@ -74,7 +74,7 @@ def print_metrics(model_name, y_true, y_pred):
     print(f"R²  : {r2:.4f}")
     print("-" * 45)
     print("LOG-TRANSFORMED METRICS:")
-    print(f"Log MAE : {log_mae:.4f}")   # This will output your 0.something
+    print(f"Log MAE : {log_mae:.4f}")  # This will output your 0.something
     print(f"Log RMSE: {log_rmse:.4f}")  # This will also output a small decimal
     print(f"Log R²  : {log_r2:.4f}")
     print("-" * 45)
