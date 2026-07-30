@@ -50,6 +50,11 @@ def multi_hot_encode_type(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = df.copy()
 
     if "Type" in df_clean.columns:
+        # Normalize separator: strip spaces around commas before splitting
+        # Prevents wrong column names like "Type_Terrace House,Condominium"
+        # when raw data has no space after the comma
+        df_clean["Type"] = df_clean["Type"].str.replace(r"\s*,\s*", ", ", regex=True)
+
         type_dummies = df_clean["Type"].str.get_dummies(sep=", ").add_prefix("Type_")
 
         df_clean = pd.concat([df_clean.drop(columns=["Type"]), type_dummies], axis=1)
@@ -71,10 +76,14 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print("\nAfter cleaning:")
     print(df["Tenure"].value_counts())
 
+    # Remove outliers before encoding to keep the data clean
+    df = remove_outliers_iqr(df, "Median_Price")
+    # Remove Transactions outliers — extreme counts inflate RMSE directly
+    df = remove_outliers_iqr(df, "Transactions")
+
     # Multi-Hot Encoding for Property Type
     df = multi_hot_encode_type(df)
 
-    df = remove_outliers_iqr(df, "Median_Price")
     print(f"[*] Shape after preprocessing: {df.shape}")
     return df
 
