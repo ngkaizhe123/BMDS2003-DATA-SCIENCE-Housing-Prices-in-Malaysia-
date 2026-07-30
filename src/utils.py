@@ -47,16 +47,37 @@ def build_preprocessor(numerical_features, categorical_features, type_features):
 
 
 def print_metrics(model_name, y_true, y_pred):
+    # 1. Calculate Real-World Metrics (Raw Ringgit)
     mae = mean_absolute_error(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
     r2 = r2_score(y_true, y_pred)
 
-    print("-" * 30)
+    # 2. Calculate Log-Transformed Metrics (The "0.something" illusion)
+    # We apply the natural logarithm to both actual and predicted prices
+    y_true_log = np.log1p(y_true)
+    y_pred_log = np.log1p(y_pred)
+
+    log_mae = mean_absolute_error(y_true_log, y_pred_log)
+    log_rmse = np.sqrt(mean_squared_error(y_true_log, y_pred_log))
+
+    # Note: R-squared usually remains identical or very similar because it measures
+    # variance explained, which scales proportionally.
+    log_r2 = r2_score(y_true_log, y_pred_log)
+
+    # 3. Display the comparison cleanly
+    print("-" * 45)
     print(f"{model_name} Performance")
+    print("-" * 45)
+    print("REAL-WORLD METRICS (Actual Ringgit):")
     print(f"MAE : RM {mae:,.2f}")
     print(f"RMSE: RM {rmse:,.2f}")
     print(f"R²  : {r2:.4f}")
-    print("-" * 30)
+    print("-" * 45)
+    print("LOG-TRANSFORMED METRICS:")
+    print(f"Log MAE : {log_mae:.4f}")  # This will output your 0.something
+    print(f"Log RMSE: {log_rmse:.4f}")  # This will also output a small decimal
+    print(f"Log R²  : {log_r2:.4f}")
+    print("-" * 45)
 
     return mae, rmse, r2
 
