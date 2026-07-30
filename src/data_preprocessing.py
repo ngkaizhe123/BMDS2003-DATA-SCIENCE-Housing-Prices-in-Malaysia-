@@ -33,6 +33,13 @@ def standardize_text_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
             df_clean[col] = df_clean[col].replace(r"\s+", " ", regex=True)
     return df_clean
 
+def clean_state(df: pd.DataFrame) -> pd.DataFrame:
+    df_clean = df.copy()
+    state_counts = df["State"].value_counts()
+    rare_states = state_counts[state_counts < 2].index
+    strat_col = df["State"].replace(rare_states, "Other_State") # Handle rare states
+    df_clean["State"] = strat_col
+    return df_clean
 
 def clean_tenure(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = df.copy()
@@ -44,6 +51,15 @@ def clean_tenure(df: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return df_clean
+
+
+def bucket_rare_areas(df: pd.DataFrame, min_count: int = 5) -> pd.DataFrame:
+    if "Area" in df.columns and "State" in df.columns:
+        area_counts = df["Area"].value_counts()
+        rare = area_counts[area_counts < min_count].index
+        df = df.copy()
+        df["Area"] = df["Area"].where(~df["Area"].isin(rare), other="Other_" + df["State"])
+    return df
 
 
 def multi_hot_encode_type(df: pd.DataFrame) -> pd.DataFrame:
@@ -70,6 +86,10 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     df = clean_tenure(df)
     print("\nAfter cleaning:")
     print(df["Tenure"].value_counts())
+
+    df = clean_state(df)
+
+    df = bucket_rare_areas(df, min_count=5)
 
     # Multi-Hot Encoding for Property Type
     df = multi_hot_encode_type(df)
