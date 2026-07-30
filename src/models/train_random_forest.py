@@ -57,11 +57,11 @@ def main():
 
 # 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
     param_dist = {
-        "regressor__regressor__n_estimators": [100, 150, 200, 50],
-        "regressor__regressor__max_depth": [12, 15, 17, None],
-        "regressor__regressor__min_samples_split": [2, 3, 5],
+        "regressor__regressor__n_estimators": [700, 500, 600],
+        "regressor__regressor__max_depth": [ 8, 10, 12, None],
+        "regressor__regressor__min_samples_split": [3, 5, 10],
         "regressor__regressor__min_samples_leaf": [1, 2, 4],
-        "regressor__regressor__max_features": ["sqrt", "log2", None],
+        "regressor__regressor__max_features": ["sqrt", "log2", 0.5],
     }
 
     print("Implementing RandomizedSearchCV for parameter tuning...")
@@ -69,8 +69,8 @@ def main():
         verbose = 1,# can see progress during the long tuning run
         estimator=model_pipeline,
         param_distributions=param_dist,
-        n_iter=20,
-        cv=5,
+        n_iter=100,
+        cv=5 ,
         scoring="r2",
         random_state=42,
         n_jobs=-1,
