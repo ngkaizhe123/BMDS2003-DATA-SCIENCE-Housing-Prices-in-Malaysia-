@@ -27,8 +27,21 @@ def split_dataset(
     X = df[categorical_features + numerical_features + type_features]
     y = df[target]
 
-    return train_test_split(X, y, test_size=0.2, random_state=42, stratify=df["State"])
+    # Only stratify by State if every state has at least 2 rows
+    # Rare states that slipped through preprocessing (e.g. Putrajaya with 1 row)
+    # will crash stratify — so we fall back to a normal split in that case
+    state_counts = df["State"].value_counts()
+    rare_states = state_counts[state_counts < 2].index
 
+    if len(rare_states) == 0:
+        # All states have enough rows — safe to stratify
+        return train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=df["State"]
+        )
+    else:
+        # Rare states found — skip stratify to avoid crash
+        print(f"Warning: Skipping stratify — rare states found with <2 rows: {list(rare_states)}")
+        return train_test_split(X, y, test_size=0.2, random_state=42)
 
 def build_preprocessor(numerical_features, categorical_features, type_features):
     numeric_transformer = Pipeline([("scaler", StandardScaler())])

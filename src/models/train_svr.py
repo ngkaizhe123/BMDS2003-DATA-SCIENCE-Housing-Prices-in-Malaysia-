@@ -26,7 +26,7 @@ def main():
     model_output_path = project_root / "prototype" / "svr_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions"]
+    numerical_features = ["Transactions", "Estimated_Size"]
 
     # Load, preprocess and split dataset using utils
     df = load_dataset(project_root)

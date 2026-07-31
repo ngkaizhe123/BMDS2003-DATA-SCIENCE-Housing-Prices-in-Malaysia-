@@ -25,8 +25,9 @@ def main():
     model_output_path = project_root / "prototype" / "random_forest_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions"]
-
+    # Add Estimated_Size so the model can actually see it!
+    numerical_features = ["Transactions", "Estimated_Size"]
+    
 # 1. Load, preprocess, and split dataset using group utils
     df = load_dataset(project_root)
     print("Running data preprocessing pipeline...")
@@ -57,16 +58,15 @@ def main():
 
 # 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
     param_dist = {
-        "regressor__regressor__n_estimators": [700, 500, 600],
-        "regressor__regressor__max_depth": [ 8, 10, 12, None],
-        "regressor__regressor__min_samples_split": [3, 5, 10],
-        "regressor__regressor__min_samples_leaf": [1, 2, 4],
-        "regressor__regressor__max_features": ["sqrt", "log2", 0.5],
+        "regressor__regressor__n_estimators": [1200, 1000, 900],
+        "regressor__regressor__max_depth": [10, 12, None],
+        "regressor__regressor__min_samples_split": [20, 22, 19],
+        "regressor__regressor__min_samples_leaf": [1, 2],
+        "regressor__regressor__max_features": ["sqrt", "log2", 0.2, 0.3, 0.4, None ],
     }
 
     print("Implementing RandomizedSearchCV for parameter tuning...")
     search = RandomizedSearchCV(
-        verbose = 1,# can see progress during the long tuning run
         estimator=model_pipeline,
         param_distributions=param_dist,
         n_iter=100,

@@ -3,8 +3,7 @@ import sys
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
-from sklearn.compose import TransformedTargetRegressor, ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures, MinMaxScaler
+from sklearn.compose import TransformedTargetRegressor
 
 # Point python path cleanly to src
 current_dir = Path(__file__).resolve().parent
@@ -16,6 +15,7 @@ from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
     load_dataset,
     split_dataset,
+    build_preprocessor,
     print_metrics,
     save_model,
 )
@@ -25,7 +25,9 @@ def main():
     model_output_path = project_root / "prototype" / "linear_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions"]
+
+    # Add Estimated_Size so the model can actually see it!
+    numerical_features = ["Transactions", "Estimated_Size"]
 
     # Load, preprocess and split dataset using utils
     df = load_dataset(project_root)
@@ -40,29 +42,9 @@ def main():
 
     # Build preprocessor using utils
     print("Building preprocessing pipelines...")
-    # Custom numeric_transformer for Linear Regression only:
-    # PolynomialFeatures adds Transactions^2 so the model can learn
-    # non-linear relationships, then StandardScaler normalizes the result
-    numeric_transformer = Pipeline([
-        ("poly", PolynomialFeatures(degree=2, include_bias=False)),
-        ("scaler", StandardScaler()),
-    ])
-
-    categorical_transformer = Pipeline([
-        ("onehot", OneHotEncoder(handle_unknown="ignore")),
-    ])
-
-    preprocessor = ColumnTransformer([
-        ("num", numeric_transformer, numerical_features),
-        ("cat", categorical_transformer, categorical_features),
-        ("type", "passthrough", type_features),
-    ])
-
-    # Scale target (Median_Price) to 0-1 range so RMSE and MAE are
-    # reported as 0.something instead of raw RM values
-    target_scaler = MinMaxScaler()
-    y_train_scaled = target_scaler.fit_transform(y_train.values.reshape(-1, 1)).ravel()
-    y_test_scaled = target_scaler.transform(y_test.values.reshape(-1, 1)).ravel()
+    preprocessor = build_preprocessor(
+        numerical_features, categorical_features, type_features
+    )
 
     print("Training Advanced Multiple Linear Regression model...")
     # Wrap the linear regression inside a log-transformer to handle skewed house prices
@@ -74,19 +56,13 @@ def main():
         inverse_func=np.expm1,
     )
 
-    model_pipeline.fit(X_train, y_train_scaled)
+    model_pipeline.fit(X_train, y_train)
 
     print("Evaluating model...")
-    y_pred_scaled = model_pipeline.predict(X_test)
+    y_pred = model_pipeline.predict(X_test)
 
-    # Print metrics on scaled target → shows 0.something RMSE and MAE
-    print_metrics("Linear Regression (Scaled 0-1)", y_test_scaled, y_pred_scaled)
-
-    # Convert predictions back to real RM for actual use in Streamlit app
-    y_pred_real = target_scaler.inverse_transform(y_pred_scaled.reshape(-1, 1)).ravel()
-
-    # Print metrics in real RM for reference
-    print_metrics("Linear Regression (Real RM)", y_test, y_pred_real)
+    # Print metrics using utils
+    print_metrics("Linear Regression", y_test, y_pred)
 
     # Save model using utils
     save_model(model_pipeline, model_output_path)
