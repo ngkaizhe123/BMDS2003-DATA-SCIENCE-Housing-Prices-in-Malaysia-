@@ -366,7 +366,7 @@ def main():
         plot_files = {
             "Linear Regression": plots_dir / "actual_vs_predicted_advanced.png",
             "XGBoost": plots_dir / "actual_vs_predicted_xgboost.png",
-            "Random Forest": plots_dir / "actual_vs_predictec_randomforest.png",
+            "Random Forest": plots_dir / "actual_vs_predicted_randomforest.png",
             "SVR": plots_dir / "actual_vs_predicted_svr.png",
         }
 
