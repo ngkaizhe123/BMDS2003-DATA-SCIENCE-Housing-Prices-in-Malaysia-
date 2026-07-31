@@ -25,8 +25,6 @@ def main():
     model_output_path = project_root / "prototype" / "linear_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-
-    # Add Estimated_Size so the model can actually see it!
     numerical_features = ["Transactions", "Estimated_Size"]
 
     # Load, preprocess and split dataset using utils

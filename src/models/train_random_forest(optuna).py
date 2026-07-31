@@ -48,11 +48,11 @@ def main():
 # 3. Define Optuna objective function for hyperparameter tuning (CLO1 & CLO3 Rubric Requirement)
     def objective(trial):
         params = {
-            "n_estimators": trial.suggest_categorical("n_estimators", [900, 1100, 1200]),
+            "n_estimators": trial.suggest_categorical("n_estimators", [1500, 1400, 1600]),
             "max_depth": trial.suggest_categorical("max_depth", [4, 10, 12, None]),
-            "min_samples_split": trial.suggest_categorical("min_samples_split", [20, 24, 22]),
+            "min_samples_split": trial.suggest_categorical("min_samples_split", [14, 18, 16]),
             "min_samples_leaf": trial.suggest_categorical("min_samples_leaf", [1, 2]),
-            "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.2, 0.3, 0.4, None]),
+            "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.5, 0.7, 0.6, None]),
         }
 
         # Build pipeline with trial parameters
