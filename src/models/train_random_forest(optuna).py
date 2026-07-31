@@ -30,11 +30,13 @@ def main():
     categorical_features = ["Area", "State", "Tenure"]
     numerical_features = ["Transactions", "Estimated_Size"]
 
-# 1. Load, preprocess, and split dataset using group utils
+# 1. Load and split dataset using group utils
     df = load_dataset(project_root)
-    print("Running data preprocessing pipeline...")
-    df = run_preprocessing_pipeline(df)
+    print("\nData Summary Preview")
+    print(df["Tenure"].value_counts())
+    print(f"Shape : {df.shape}")
     type_features = [col for col in df.columns if col.startswith("Type_")]
+    print("-" * 45)
 
     print("Splitting data...")
     X_train, X_test, y_train, y_test = split_dataset(
@@ -45,14 +47,14 @@ def main():
     print("Building preprocessing pipelines...")
     preprocessor = build_preprocessor(numerical_features, categorical_features, type_features)
 
-# 3. Define Optuna objective function for hyperparameter tuning (CLO1 & CLO3 Rubric Requirement)
+# 3. Define Optuna objective function for hyperparameter tuning
     def objective(trial):
         params = {
-            "n_estimators": trial.suggest_categorical("n_estimators", [1500, 1400, 1600]),
-            "max_depth": trial.suggest_categorical("max_depth", [4, 10, 12, None]),
-            "min_samples_split": trial.suggest_categorical("min_samples_split", [14, 18, 16]),
-            "min_samples_leaf": trial.suggest_categorical("min_samples_leaf", [1, 2]),
-            "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.5, 0.7, 0.6, None]),
+            "n_estimators": trial.suggest_int("n_estimators", 400, 800, step=50),
+            "max_depth": trial.suggest_int("max_depth", 25, 40),
+            "min_samples_split": trial.suggest_int("min_samples_split", 2, 8),
+            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 3),
+            "max_features": trial.suggest_float("max_features", 0.25, 0.55),
         }
 
         # Build pipeline with trial parameters
@@ -62,7 +64,6 @@ def main():
                     ("preprocessor", preprocessor),
                     ("regressor", RandomForestRegressor(
                         random_state=42,
-                        n_jobs=-1,
                         **params
                     )),
                 ]
@@ -74,24 +75,24 @@ def main():
         # Use cross-validation score as Optuna objective to maximize
         score = cross_val_score(
             model_pipeline, X_train, y_train,
-            cv=5, scoring="r2", n_jobs=-1
+            cv=5,
+            scoring="r2",
+            n_jobs=-1
         ).mean()
 
         return score
 
-    print("Implementing Optuna for parameter tuning...")
-    # TPESampler is Optuna's smarter version of random search — learns from past trials
+    print("Implementing Optuna for parameter tuning (Fine Search)...")
     study = optuna.create_study(
         direction="maximize",
         sampler=TPESampler(seed=42)
     )
 
-    # Suppress per-trial logs, only show progress every 10 trials
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
     study.optimize(
         objective,
-        n_trials=50,      # 50 smart trials beats 100 random ones
+        n_trials=100,
         show_progress_bar=True,
     )
 

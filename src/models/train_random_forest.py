@@ -12,7 +12,7 @@ project_root = current_dir.parent.parent
 sys.path.append(str(project_root.parent / "src"))
 sys.path.append(str(project_root))
 
-from src.data_preprocessing import run_preprocessing_pipeline
+# src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
     load_dataset,
     split_dataset,
@@ -27,11 +27,13 @@ def main():
     categorical_features = ["Area", "State", "Tenure"]
     numerical_features = ["Transactions", "Estimated_Size"]
     
-# 1. Load, preprocess, and split dataset using group utils
+# 1. Load and split dataset using group utils
     df = load_dataset(project_root)
-    print("Running data preprocessing pipeline...")
-    df = run_preprocessing_pipeline(df)
+    print("\nData Summary Preview")
+    print(df["Tenure"].value_counts())
+    print(f"Shape : {df.shape}")
     type_features = [col for col in df.columns if col.startswith("Type_")]
+    print("-" * 45)
 
     print("Splitting data...")
     X_train, X_test, y_train, y_test = split_dataset(
@@ -41,8 +43,8 @@ def main():
 # 2. Build preprocessor matching the existing pipeline setup
     print("Building preprocessing pipelines...")
     preprocessor = build_preprocessor(numerical_features, categorical_features, type_features)
-
     print("Training Random Forest Regression model...")
+
 # Wrap RandomForestRegressor in TransformedTargetRegressor to handle target skewness
     model_pipeline = TransformedTargetRegressor(
         regressor=Pipeline(
@@ -57,11 +59,11 @@ def main():
 
 # 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
     param_dist = {
-        "regressor__regressor__n_estimators": [1200, 1000, 900],
-        "regressor__regressor__max_depth": [10, 12, None],
-        "regressor__regressor__min_samples_split": [20, 22, 19],
-        "regressor__regressor__min_samples_leaf": [1, 2],
-        "regressor__regressor__max_features": ["sqrt", "log2", 0.2, 0.3, 0.4, None ],
+        "regressor__regressor__n_estimators": [600, 550, 500],
+        "regressor__regressor__max_depth": [33, 32, 34, None],
+        "regressor__regressor__min_samples_split": [2, 3, 4],
+        "regressor__regressor__min_samples_leaf": [1],
+        "regressor__regressor__max_features": ["sqrt", "log2", 0.3, None ],
     }
 
     print("Implementing RandomizedSearchCV for parameter tuning...")
@@ -71,8 +73,7 @@ def main():
         n_iter=100,
         cv=5 ,
         scoring="r2",
-        random_state=42,
-        n_jobs=-1,
+        random_state=42
     )
 
     print("Fitting Random Forest with RandomizedSearchCV...")
