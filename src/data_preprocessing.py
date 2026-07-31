@@ -77,15 +77,6 @@ def multi_hot_encode_type(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 
-def engineer_price_features(df: pd.DataFrame) -> pd.DataFrame:
-    # Encode average price per State and Area as numeric features
-    # Gives the model real price signal instead of relying on category names alone
-    df = df.copy()
-    df["State_Price_Mean"] = df.groupby("State")["Median_Price"].transform("mean")
-    df["Area_Price_Mean"] = df.groupby("Area")["Median_Price"].transform("mean")
-    return df
-
-
 def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print(f"[*] Initial dataset shape: {df.shape}")
 
