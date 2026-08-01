@@ -12,40 +12,46 @@ project_root = current_dir.parent.parent
 sys.path.append(str(project_root.parent / "src"))
 sys.path.append(str(project_root))
 
-# src.data_preprocessing import run_preprocessing_pipeline
+from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
-    load_dataset,
+    load_raw_dataset,
     split_dataset,
     build_preprocessor,
     print_metrics,
     save_model,
 )
 
+
 def main():
     model_output_path = project_root / "prototype" / "random_forest_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Estimated_Size"]
-    
-# 1. Load and split dataset using group utils
-    df = load_dataset(project_root)
-    print("\nData Summary Preview")
-    print(df["Tenure"].value_counts())
-    print(f"Shape : {df.shape}")
+    numerical_features = [
+        "Transactions",
+        "Estimated_Size",
+    ]
+
+    # 1. Load raw dataset and run preprocessing pipeline ONCE
+    df = load_raw_dataset(project_root)
+    print("Running data preprocessing pipeline...")
+    df = run_preprocessing_pipeline(df)
+
     type_features = [col for col in df.columns if col.startswith("Type_")]
     print("-" * 45)
 
     print("Splitting data...")
     X_train, X_test, y_train, y_test = split_dataset(
-        df, categorical_features, numerical_features,type_features
+        df, categorical_features, numerical_features, type_features
     )
 
-# 2. Build preprocessor matching the existing pipeline setup
+    # 2. Build preprocessor matching the existing pipeline setup
     print("Building preprocessing pipelines...")
-    preprocessor = build_preprocessor(numerical_features, categorical_features, type_features)
+    preprocessor = build_preprocessor(
+        numerical_features, categorical_features, type_features
+    )
     print("Training Random Forest Regression model...")
 
-# Wrap RandomForestRegressor in TransformedTargetRegressor to handle target skewness
+    # Wrap RandomForestRegressor in TransformedTargetRegressor to handle target skewness
     model_pipeline = TransformedTargetRegressor(
         regressor=Pipeline(
             steps=[
@@ -57,23 +63,23 @@ def main():
         inverse_func=np.expm1,
     )
 
-# 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
+    # 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
     param_dist = {
         "regressor__regressor__n_estimators": [600, 550, 500],
         "regressor__regressor__max_depth": [33, 32, 34, None],
         "regressor__regressor__min_samples_split": [2, 3, 4],
         "regressor__regressor__min_samples_leaf": [1],
-        "regressor__regressor__max_features": ["sqrt", "log2", 0.3, None ],
+        "regressor__regressor__max_features": ["sqrt", "log2", 0.3, None],
     }
 
     print("Implementing RandomizedSearchCV for parameter tuning...")
     search = RandomizedSearchCV(
         estimator=model_pipeline,
         param_distributions=param_dist,
-        n_iter=100,
-        cv=5 ,
+        n_iter=50,
+        cv=5,
         scoring="r2",
-        random_state=42
+        random_state=42,
     )
 
     print("Fitting Random Forest with RandomizedSearchCV...")
@@ -83,15 +89,16 @@ def main():
     best_model = search.best_estimator_
     y_pred = best_model.predict(X_test)
 
-# 4. Print regression metrics ($R^2$, MAE, RMSE)
+    # 4. Print regression metrics ($R^2$, MAE, RMSE)
     print_metrics("Random Forest", y_test, y_pred)
 
     print(f"Best parameters found: {search.best_params_}")
     print(f"Best Model R2 Score: {search.best_score_:.4f}")
     print("-" * 30)
 
-# 5. Export trained model for your Streamlit deployment prototype
+    # 5. Export trained model for your Streamlit deployment prototype
     save_model(best_model, model_output_path)
 
+
 if __name__ == "__main__":
-     main()
+    main()

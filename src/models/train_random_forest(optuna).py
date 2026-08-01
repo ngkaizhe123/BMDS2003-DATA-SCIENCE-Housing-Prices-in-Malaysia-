@@ -16,7 +16,7 @@ sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
-    load_dataset,
+    load_raw_dataset,
     split_dataset,
     build_preprocessor,
     print_metrics,
@@ -25,16 +25,23 @@ from src.utils import (
 
 
 def main():
-    model_output_path = project_root / "prototype" / "random_forest_regression(optuna).pkl"
+    model_output_path = (
+        project_root / "prototype" / "random_forest_regression(optuna).pkl"
+    )
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Estimated_Size"]
+    numerical_features = [
+        "Transactions",
+        "Estimated_Size",
+        "Log_Estimated_Size",
+        "Log_Transactions",
+    ]
 
-# 1. Load and split dataset using group utils
-    df = load_dataset(project_root)
-    print("\nData Summary Preview")
-    print(df["Tenure"].value_counts())
-    print(f"Shape : {df.shape}")
+    # 1. Load raw dataset and run preprocessing pipeline ONCE
+    df = load_raw_dataset(project_root)
+    print("Running data preprocessing pipeline...")
+    df = run_preprocessing_pipeline(df)
+
     type_features = [col for col in df.columns if col.startswith("Type_")]
     print("-" * 45)
 
@@ -43,11 +50,13 @@ def main():
         df, categorical_features, numerical_features, type_features
     )
 
-# 2. Build preprocessor matching the existing pipeline setup
+    # 2. Build preprocessor matching the existing pipeline setup
     print("Building preprocessing pipelines...")
-    preprocessor = build_preprocessor(numerical_features, categorical_features, type_features)
+    preprocessor = build_preprocessor(
+        numerical_features, categorical_features, type_features
+    )
 
-# 3. Define Optuna objective function for hyperparameter tuning
+    # 3. Define Optuna objective function for hyperparameter tuning
     def objective(trial):
         params = {
             "n_estimators": trial.suggest_int("n_estimators", 400, 800, step=50),
@@ -62,10 +71,7 @@ def main():
             regressor=Pipeline(
                 steps=[
                     ("preprocessor", preprocessor),
-                    ("regressor", RandomForestRegressor(
-                        random_state=42,
-                        **params
-                    )),
+                    ("regressor", RandomForestRegressor(random_state=42, **params)),
                 ]
             ),
             func=np.log1p,
@@ -74,19 +80,13 @@ def main():
 
         # Use cross-validation score as Optuna objective to maximize
         score = cross_val_score(
-            model_pipeline, X_train, y_train,
-            cv=5,
-            scoring="r2",
-            n_jobs=-1
+            model_pipeline, X_train, y_train, cv=5, scoring="r2", n_jobs=-1
         ).mean()
 
         return score
 
     print("Implementing Optuna for parameter tuning (Fine Search)...")
-    study = optuna.create_study(
-        direction="maximize",
-        sampler=TPESampler(seed=42)
-    )
+    study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=42))
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
@@ -100,18 +100,17 @@ def main():
     print(f"Best CV R2 Score     : {study.best_value:.4f}")
     print("-" * 30)
 
-# 4. Retrain best model on full training set using best params from Optuna
+    # 4. Retrain best model on full training set using best params from Optuna
     print("Training Random Forest Regression model with best parameters...")
     best_params = study.best_params
     best_model = TransformedTargetRegressor(
         regressor=Pipeline(
             steps=[
                 ("preprocessor", preprocessor),
-                ("regressor", RandomForestRegressor(
-                    random_state=42,
-                    n_jobs=-1,
-                    **best_params
-                )),
+                (
+                    "regressor",
+                    RandomForestRegressor(random_state=42, n_jobs=-1, **best_params),
+                ),
             ]
         ),
         func=np.log1p,
@@ -124,11 +123,11 @@ def main():
     print("Evaluating model...")
     y_pred = best_model.predict(X_test)
 
-# 5. Print regression metrics (R², MAE, RMSE)
+    # 5. Print regression metrics (R², MAE, RMSE)
     print_metrics("Random Forest", y_test, y_pred)
     print("-" * 30)
 
-# 6. Export trained model for your Streamlit deployment prototype
+    # 6. Export trained model for your Streamlit deployment prototype
     save_model(best_model, model_output_path)
 
 

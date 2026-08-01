@@ -13,7 +13,7 @@ sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
-    load_dataset,
+    load_raw_dataset,
     split_dataset,
     build_preprocessor,
     print_metrics,
@@ -25,10 +25,15 @@ def main():
     model_output_path = project_root / "prototype" / "linear_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Estimated_Size"]
+    numerical_features = [
+        "Transactions",
+        "Estimated_Size",
+        "Log_Estimated_Size",
+        "Log_Transactions",
+    ]
 
-    # Load, preprocess and split dataset using utils
-    df = load_dataset(project_root)
+    # Load raw dataset and run preprocessing pipeline ONCE
+    df = load_raw_dataset(project_root)
     print("Running data preprocessing pipeline...")
     df = run_preprocessing_pipeline(df)
     type_features = [col for col in df.columns if col.startswith("Type_")]

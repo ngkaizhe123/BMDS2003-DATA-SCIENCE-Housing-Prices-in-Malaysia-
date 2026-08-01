@@ -11,7 +11,7 @@ project_root = current_dir.parent
 sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
-from src.utils import load_dataset, split_dataset, load_model
+from src.utils import load_raw_dataset, split_dataset, load_model
 
 
 def plot_residual_analysis(
@@ -28,8 +28,8 @@ def plot_residual_analysis(
         )
         return
 
-    # Load dataset & model
-    df = load_dataset(project_root)
+    # Load raw dataset & process ONCE
+    df = load_raw_dataset(project_root)
     df = run_preprocessing_pipeline(df)
 
     categorical_features = ["Area", "State", "Tenure"]

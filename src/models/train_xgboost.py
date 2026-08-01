@@ -16,7 +16,7 @@ sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
-    load_dataset,
+    load_raw_dataset,
     split_dataset,
     build_preprocessor,
     print_metrics,
@@ -28,14 +28,17 @@ def main():
     model_output_path = project_root / "prototype" / "xgboost_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Estimated_Size"]
+    numerical_features = [
+        "Transactions",
+        "Estimated_Size",
+        "Log_Estimated_Size",
+        "Log_Transactions",
+    ]
 
-    # Load, preprocess and split dataset using utils
-    df = load_dataset(project_root)
+    # Load raw dataset and run preprocessing pipeline ONCE
+    df = load_raw_dataset(project_root)
 
     print("Running data preprocessing pipeline...")
-    # Running it again ensures data is clean, though it may be slightly redundant
-    # if the CSV is already cleaned. Kept here for consistency with other scripts.
     df = run_preprocessing_pipeline(df)
 
     type_features = [col for col in df.columns if col.startswith("Type_")]
@@ -71,22 +74,22 @@ def main():
     )
 
     param_dist = {
-        "regressor__regressor__n_estimators": [100, 200, 300, 500],
-        "regressor__regressor__max_depth": [3, 4, 5, 6],
-        "regressor__regressor__learning_rate": [0.01, 0.05, 0.1],
-        "regressor__regressor__subsample": [0.8, 0.9, 1.0],
-        "regressor__regressor__colsample_bytree": [0.8, 0.9, 1.0],
-        "regressor__regressor__min_child_weight": [1, 3, 5],
-        # 'regressor__regressor__reg_alpha': [0, 0.1, 1, 5],  # Regularization L1 (Lasso)
-        # 'regressor__regressor__reg_lambda': [1, 5, 10, 20],  # Regularization L2 (Ridge)
-        # 'regressor__regressor__gamma': [0, 0.1, 0.5],
+        "regressor__regressor__n_estimators": [200, 300, 400, 500],
+        "regressor__regressor__max_depth": [4, 5, 6],
+        "regressor__regressor__learning_rate": [0.03, 0.05, 0.08],
+        "regressor__regressor__subsample": [0.7, 0.8, 0.9],
+        "regressor__regressor__colsample_bytree": [0.7, 0.8, 1.0],
+        "regressor__regressor__min_child_weight": [1, 2, 3, 5],
+        "regressor__regressor__reg_alpha": [0, 0.1, 0.5, 1.0],
+        "regressor__regressor__reg_lambda": [1.0, 3.0, 5.0, 10.0],
+        "regressor__regressor__gamma": [0, 0.1, 0.2],
     }
 
     print("Implementing RandomizedSearchCV for hyperparameter tuning...")
     search = RandomizedSearchCV(
         estimator=model_pipeline,
         param_distributions=param_dist,
-        n_iter=30,
+        n_iter=50,
         cv=5,
         scoring="r2",
         random_state=42,

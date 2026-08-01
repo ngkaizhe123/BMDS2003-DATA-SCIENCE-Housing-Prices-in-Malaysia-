@@ -9,12 +9,22 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 
+def load_raw_dataset(project_root):
+    data_path = project_root / "data" / "raw" / "malaysia_house_price_data_2025.csv"
+
+    print("Loading raw dataset...")
+    try:
+        return pd.read_csv(data_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Raw dataset not found at {data_path}")
+
+
 def load_dataset(project_root):
     data_path = (
         project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
     )
 
-    print("Loading dataset...")
+    print("Loading processed dataset...")
     try:
         return pd.read_csv(data_path)
     except FileNotFoundError:
@@ -40,8 +50,11 @@ def split_dataset(
         )
     else:
         # Rare states found — skip stratify to avoid crash
-        print(f"Warning: Skipping stratify — rare states found with <2 rows: {list(rare_states)}")
+        print(
+            f"Warning: Skipping stratify — rare states found with <2 rows: {list(rare_states)}"
+        )
         return train_test_split(X, y, test_size=0.2, random_state=42)
+
 
 def build_preprocessor(numerical_features, categorical_features, type_features):
     numeric_transformer = Pipeline([("scaler", StandardScaler())])
@@ -95,7 +108,7 @@ def print_metrics(model_name, y_true, y_pred):
     return mae, rmse, r2
 
 
-def save_model( model, output_path):
+def save_model(model, output_path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, output_path)
 
