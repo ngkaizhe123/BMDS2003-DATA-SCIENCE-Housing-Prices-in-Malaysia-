@@ -28,7 +28,7 @@ def main():
     categorical_features = ["Area", "State", "Tenure"]
     numerical_features = [
         "Transactions",
-        "Estimated_Size",
+        "Estimated_Size"
     ]
 
     # 1. Load raw dataset and run preprocessing pipeline ONCE
@@ -56,7 +56,7 @@ def main():
         regressor=Pipeline(
             steps=[
                 ("preprocessor", preprocessor),
-                ("regressor", RandomForestRegressor(random_state=42, n_jobs=-1)),
+                ("regressor", RandomForestRegressor(random_state=42)),
             ]
         ),
         func=np.log1p,
@@ -65,21 +65,22 @@ def main():
 
     # 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
     param_dist = {
-        "regressor__regressor__n_estimators": [600, 550, 500],
-        "regressor__regressor__max_depth": [33, 32, 34, None],
-        "regressor__regressor__min_samples_split": [2, 3, 4],
-        "regressor__regressor__min_samples_leaf": [1],
-        "regressor__regressor__max_features": ["sqrt", "log2", 0.3, None],
+        "regressor__regressor__n_estimators": [400, 700, 600],
+        "regressor__regressor__max_depth": [10, 20, 30, None],
+        "regressor__regressor__min_samples_split": [2, 5, 10],
+        "regressor__regressor__min_samples_leaf": [1,2],
+        "regressor__regressor__max_features": ["sqrt", "log2", 1, 0.3, 0.5],
     }
 
     print("Implementing RandomizedSearchCV for parameter tuning...")
     search = RandomizedSearchCV(
         estimator=model_pipeline,
         param_distributions=param_dist,
-        n_iter=50,
+        n_iter=30,
         cv=5,
         scoring="r2",
         random_state=42,
+        n_jobs=-1
     )
 
     print("Fitting Random Forest with RandomizedSearchCV...")
