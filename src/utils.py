@@ -27,7 +27,7 @@ def split_dataset(
     X = df[categorical_features + numerical_features + type_features]
     y = df[target]
 
-    return train_test_split(X, y, test_size=0.2, random_state=42, stratify=df["State"])
+    return train_test_split(X, y, test_size=0.2, random_state=42)
 
 
 def build_preprocessor(numerical_features, categorical_features, type_features):
