@@ -24,17 +24,37 @@ from src.utils import (
 )
 
 
+# Early Stopping Callback Class
+class EarlyStoppingCallback:
+    def __init__(self, early_stopping_rounds: int):
+        self.early_stopping_rounds = early_stopping_rounds
+        self.best_score = -np.inf
+        self.stagnant_trials = 0
+
+    def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial):
+        # Check if the study's best value improved
+        if study.best_value > self.best_score:
+            self.best_score = study.best_value
+            self.stagnant_trials = 0  # Reset counter if a new high score is found
+        else:
+            self.stagnant_trials += 1  # Increase counter if no improvement
+
+        # Halt the study if the limit is reached
+        if self.stagnant_trials >= self.early_stopping_rounds:
+            print(
+                f"\n[Early Stopping] Halting search! No improvement over the last {self.early_stopping_rounds} trials.")
+            study.stop()
+
+
 def main():
     model_output_path = (
-        project_root / "prototype" / "random_forest_regression(optuna).pkl"
+            project_root / "prototype" / "random_forest_regression(optuna).pkl"
     )
 
     categorical_features = ["Area", "State", "Tenure"]
     numerical_features = [
         "Transactions",
-        "Estimated_Size",
-        "Log_Estimated_Size",
-        "Log_Transactions",
+        "Estimated_Size"
     ]
 
     # 1. Load raw dataset and run preprocessing pipeline ONCE
@@ -59,11 +79,11 @@ def main():
     # 3. Define Optuna objective function for hyperparameter tuning
     def objective(trial):
         params = {
-            "n_estimators": trial.suggest_int("n_estimators", 400, 800, step=50),
-            "max_depth": trial.suggest_int("max_depth", 25, 40),
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 8),
+            "n_estimators": trial.suggest_int("n_estimators", 600, 1100, step=50),
+            "max_depth": trial.suggest_int("max_depth", 35, 45),
+            "min_samples_split": trial.suggest_int("min_samples_split", 2, 7),
             "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 3),
-            "max_features": trial.suggest_float("max_features", 0.25, 0.55),
+            "max_features": trial.suggest_float("max_features", 0.1, 1.0),
         }
 
         # Build pipeline with trial parameters
@@ -90,10 +110,13 @@ def main():
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
+    early_stop = EarlyStoppingCallback(early_stopping_rounds=20)
+
     study.optimize(
         objective,
-        n_trials=100,
+        n_trials=200,
         show_progress_bar=True,
+        callbacks=[early_stop]
     )
 
     print(f"\nBest parameters found: {study.best_params}")
