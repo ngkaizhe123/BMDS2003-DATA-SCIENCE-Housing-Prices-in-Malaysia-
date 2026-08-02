@@ -26,10 +26,7 @@ def main():
     model_output_path = project_root / "prototype" / "random_forest_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = [
-        "Transactions",
-        "Estimated_Size"
-    ]
+    numerical_features = ["Transactions", "Estimated_Size"]
 
     # 1. Load raw dataset and run preprocessing pipeline ONCE
     df = load_raw_dataset(project_root)
@@ -68,7 +65,7 @@ def main():
         "regressor__regressor__n_estimators": [400, 700, 600],
         "regressor__regressor__max_depth": [10, 20, 30, None],
         "regressor__regressor__min_samples_split": [2, 5, 10],
-        "regressor__regressor__min_samples_leaf": [1,2],
+        "regressor__regressor__min_samples_leaf": [1, 2],
         "regressor__regressor__max_features": ["sqrt", "log2", 1, 0.3, 0.5],
     }
 
@@ -80,7 +77,7 @@ def main():
         cv=5,
         scoring="r2",
         random_state=42,
-        n_jobs=-1
+        n_jobs=-1,
     )
 
     print("Fitting Random Forest with RandomizedSearchCV...")

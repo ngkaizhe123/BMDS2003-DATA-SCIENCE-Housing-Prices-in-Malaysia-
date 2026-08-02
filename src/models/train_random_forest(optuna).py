@@ -42,20 +42,18 @@ class EarlyStoppingCallback:
         # Halt the study if the limit is reached
         if self.stagnant_trials >= self.early_stopping_rounds:
             print(
-                f"\n[Early Stopping] Halting search! No improvement over the last {self.early_stopping_rounds} trials.")
+                f"\n[Early Stopping] Halting search! No improvement over the last {self.early_stopping_rounds} trials."
+            )
             study.stop()
 
 
 def main():
     model_output_path = (
-            project_root / "prototype" / "random_forest_regression(optuna).pkl"
+        project_root / "prototype" / "random_forest_regression(optuna).pkl"
     )
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = [
-        "Transactions",
-        "Estimated_Size"
-    ]
+    numerical_features = ["Transactions", "Estimated_Size"]
 
     # 1. Load raw dataset and run preprocessing pipeline ONCE
     df = load_raw_dataset(project_root)
@@ -113,10 +111,7 @@ def main():
     early_stop = EarlyStoppingCallback(early_stopping_rounds=20)
 
     study.optimize(
-        objective,
-        n_trials=200,
-        show_progress_bar=True,
-        callbacks=[early_stop]
+        objective, n_trials=200, show_progress_bar=True, callbacks=[early_stop]
     )
 
     print(f"\nBest parameters found: {study.best_params}")
