@@ -220,9 +220,7 @@ def main():
     print("\nOutliers Count: ")
     for col in numeric_cols:
         n = count_outliers(df[col])
-        print(
-            f"{col}: {n} ({n / len(df):.2%})"
-        )
+        print(f"{col}: {n} ({n / len(df):.2%})")
 
     # --------------------------------------------------
     # Summary
