@@ -123,7 +123,9 @@ def main():
     print("DESCRIPTIVE STATISTICS")
     print("=" * 60)
 
-    print(df.describe(include="all"))
+    summary = df.describe(include="all")
+    print(summary)
+    summary.to_csv(output_dir / "descriptive_statistics.csv")
 
     # --------------------------------------------------
     # Numeric Features
@@ -194,6 +196,9 @@ def main():
     # --------------------------------------------------
 
     if "Transactions" in df.columns and "Median_Price" in df.columns:
+        # -------------------------
+        # Original Scatter Plot
+        # -------------------------
         plt.figure(figsize=(7, 5))
         sns.scatterplot(data=df, x="Transactions", y="Median_Price", alpha=0.5)
         plt.title("Transactions vs Median Price")
@@ -201,18 +206,77 @@ def main():
         plt.savefig(output_dir / "transactions_vs_price.png", dpi=300)
         plt.close()
 
+        # -------------------------
+        # Log Scatter Plot
+        # -------------------------
+        plt.figure(figsize=(7, 5))
+        sns.scatterplot(
+            data=df, x="Transactions", y=np.log1p(df["Median_Price"]), alpha=0.5
+        )
+        plt.ylabel("Log(Median Price)")
+        plt.title("Transactions vs Log(Median Price)")
+        plt.tight_layout()
+        plt.savefig(output_dir / "transactions_vs_price_log.png", dpi=300)
+        plt.close()
+
     # --------------------------------------------------
     # Feature vs Target Analysis
     # --------------------------------------------------
 
     for col in ["State", "Tenure", "Type"]:
-        if col in df.columns:
-            plt.figure(figsize=(10, 5))
-            sns.boxplot(x=col, y="Median_Price", data=df)
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            plt.savefig(output_dir / f"{col}_vs_price.png", dpi=300)
-            plt.close()
+
+        if col not in df.columns:
+            continue
+
+        # Copy dataframe for plotting only
+        plot_df = df.copy()
+        plot_col = col
+
+        # Group infrequent property types
+        if col == "Type":
+            counts = plot_df["Type"].value_counts()
+
+            plot_df["Type_Plot"] = plot_df["Type"].where(
+                plot_df["Type"].map(counts) >= 30, "Others"
+            )
+
+            plot_col = "Type_Plot"
+
+        # Order categories by median house price
+        order = plot_df.groupby(plot_col)["Median_Price"].median().sort_values().index
+
+        # -------------------------
+        # Original Boxplot
+        # -------------------------
+        plt.figure(figsize=(12, 6))
+
+        sns.boxplot(data=plot_df, x=plot_col, y="Median_Price", order=order)
+
+        plt.xticks(rotation=45, ha="right")
+        plt.title(f"{col} vs Median Price")
+        plt.tight_layout()
+
+        plt.savefig(output_dir / f"{col}_vs_price.png", dpi=300)
+
+        plt.close()
+
+        # -------------------------
+        # Log Boxplot
+        # -------------------------
+        plt.figure(figsize=(12, 6))
+
+        sns.boxplot(
+            data=plot_df, x=plot_col, y=np.log1p(plot_df["Median_Price"]), order=order
+        )
+
+        plt.xticks(rotation=45, ha="right")
+        plt.ylabel("log1p(Median Price)")
+        plt.title(f"{col} vs Log(Median Price)")
+        plt.tight_layout()
+
+        plt.savefig(output_dir / f"{col}_vs_price_log.png", dpi=300)
+
+        plt.close()
 
     # --------------------------------------------------
     # Outliers Count
