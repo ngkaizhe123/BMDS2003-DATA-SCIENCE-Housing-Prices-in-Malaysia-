@@ -40,8 +40,11 @@ def split_dataset(
         )
     else:
         # Rare states found — skip stratify to avoid crash
-        print(f"Warning: Skipping stratify — rare states found with <2 rows: {list(rare_states)}")
+        print(
+            f"Warning: Skipping stratify — rare states found with <2 rows: {list(rare_states)}"
+        )
         return train_test_split(X, y, test_size=0.2, random_state=42)
+
 
 def build_preprocessor(numerical_features, categorical_features, type_features):
     numeric_transformer = Pipeline([("scaler", StandardScaler())])
@@ -95,7 +98,7 @@ def print_metrics(model_name, y_true, y_pred):
     return mae, rmse, r2
 
 
-def save_model( model, output_path):
+def save_model(model, output_path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, output_path)
 
