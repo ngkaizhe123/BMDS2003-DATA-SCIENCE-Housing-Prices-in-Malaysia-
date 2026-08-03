@@ -28,7 +28,7 @@ def main():
     model_output_path = project_root / "prototype" / "xgboost_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions"]
+    numerical_features = ["Transactions", "Estimated_Size"]
 
     # Load, preprocess and split dataset using utils
     df = load_dataset(project_root)
@@ -77,6 +77,9 @@ def main():
         "regressor__regressor__subsample": [0.8, 0.9, 1.0],
         "regressor__regressor__colsample_bytree": [0.8, 0.9, 1.0],
         "regressor__regressor__min_child_weight": [1, 3, 5],
+        # 'regressor__regressor__reg_alpha': [0, 0.1, 1, 5],  # Regularization L1 (Lasso)
+        # 'regressor__regressor__reg_lambda': [1, 5, 10, 20],  # Regularization L2 (Ridge)
+        # 'regressor__regressor__gamma': [0, 0.1, 0.5],
     }
 
     print("Implementing RandomizedSearchCV for hyperparameter tuning...")

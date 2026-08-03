@@ -34,6 +34,15 @@ def standardize_text_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     return df_clean
 
 
+def clean_state(df: pd.DataFrame) -> pd.DataFrame:
+    df_clean = df.copy()
+    state_counts = df["State"].value_counts()
+    rare_states = state_counts[state_counts < 2].index
+    strat_col = df["State"].replace(rare_states, "Other_State")  # Handle rare states
+    df_clean["State"] = strat_col
+    return df_clean
+
+
 def clean_tenure(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = df.copy()
     if "Tenure" in df_clean.columns:
@@ -46,10 +55,25 @@ def clean_tenure(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 
+def bucket_rare_areas(df: pd.DataFrame, min_count: int = 5) -> pd.DataFrame:
+    if "Area" in df.columns and "State" in df.columns:
+        area_counts = df["Area"].value_counts()
+        rare = area_counts[area_counts < min_count].index
+        df = df.copy()
+        df["Area"] = df["Area"].where(
+            ~df["Area"].isin(rare), other="Other_" + df["State"]
+        )
+    return df
+
+
 def multi_hot_encode_type(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = df.copy()
 
     if "Type" in df_clean.columns:
+        # Normalize separator: strip spaces around commas before splitting
+        # Prevents wrong column names when raw data has no space after the comma
+        df_clean["Type"] = df_clean["Type"].str.replace(r"\s*,\s*", ", ", regex=True)
+
         type_dummies = df_clean["Type"].str.get_dummies(sep=", ").add_prefix("Type_")
 
         df_clean = pd.concat([df_clean.drop(columns=["Type"]), type_dummies], axis=1)
@@ -71,10 +95,23 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print("\nAfter cleaning:")
     print(df["Tenure"].value_counts())
 
-    # Multi-Hot Encoding for Property Type
+    # 1. ENGINEER THE SIZE FEATURE HERE
+    if "Median_PSF" in df.columns:
+        df["Estimated_Size"] = df["Median_Price"] / df["Median_PSF"]
+        # Drop Median_PSF so the model doesn't cheat by knowing the price-per-sqft directly
+        df = df.drop(columns=["Median_PSF"])
+
+    # 2. REMOVE OUTLIERS FIRST
+    df = remove_outliers_iqr(df, "Median_Price")
+    df = remove_outliers_iqr(df, "Transactions")
+
+    # 3. CLEAN RARE CATEGORIES AFTER OUTLIERS ARE REMOVED
+    df = clean_state(df)
+    df = bucket_rare_areas(df, min_count=5)
+
+    # 4. ENCODE TYPES
     df = multi_hot_encode_type(df)
 
-    df = remove_outliers_iqr(df, "Median_Price")
     print(f"[*] Shape after preprocessing: {df.shape}")
     return df
 

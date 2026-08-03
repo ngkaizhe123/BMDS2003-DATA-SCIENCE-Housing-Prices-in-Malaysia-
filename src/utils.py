@@ -27,7 +27,23 @@ def split_dataset(
     X = df[categorical_features + numerical_features + type_features]
     y = df[target]
 
-    return train_test_split(X, y, test_size=0.2, random_state=42)
+    # Only stratify by State if every state has at least 2 rows
+    # Rare states that slipped through preprocessing (e.g. Putrajaya with 1 row)
+    # will crash stratify — so we fall back to a normal split in that case
+    state_counts = df["State"].value_counts()
+    rare_states = state_counts[state_counts < 2].index
+
+    if len(rare_states) == 0:
+        # All states have enough rows — safe to stratify
+        return train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=df["State"]
+        )
+    else:
+        # Rare states found — skip stratify to avoid crash
+        print(
+            f"Warning: Skipping stratify — rare states found with <2 rows: {list(rare_states)}"
+        )
+        return train_test_split(X, y, test_size=0.2, random_state=42)
 
 
 def build_preprocessor(numerical_features, categorical_features, type_features):
@@ -47,7 +63,7 @@ def build_preprocessor(numerical_features, categorical_features, type_features):
 
 
 def print_metrics(model_name, y_true, y_pred):
-    # 1. Calculate Real-World Metrics (Raw Ringgit)
+    # 1. Calculate Real-World Metrics
     mae = mean_absolute_error(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
     r2 = r2_score(y_true, y_pred)
@@ -69,14 +85,14 @@ def print_metrics(model_name, y_true, y_pred):
     print(f"{model_name} Performance")
     print("-" * 45)
     print("REAL-WORLD METRICS (Actual Ringgit):")
-    print(f"MAE : RM {mae:,.2f}")
+    print(f"MAE: RM {mae:,.2f}")
     print(f"RMSE: RM {rmse:,.2f}")
-    print(f"R²  : {r2:.4f}")
+    print(f"R² : {r2:.4f}")
     print("-" * 45)
     print("LOG-TRANSFORMED METRICS:")
-    print(f"Log MAE : {log_mae:.4f}")  # This will output your 0.something
-    print(f"Log RMSE: {log_rmse:.4f}")  # This will also output a small decimal
-    print(f"Log R²  : {log_r2:.4f}")
+    print(f"Log MAE: {log_mae:.4f}")
+    print(f"Log RMSE: {log_rmse:.4f}")
+    print(f"Log R²: {log_r2:.4f}")
     print("-" * 45)
 
     return mae, rmse, r2
