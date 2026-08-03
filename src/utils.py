@@ -9,12 +9,22 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 
+def load_raw_dataset(project_root):
+    data_path = project_root / "data" / "raw" / "malaysia_house_price_data_2025.csv"
+
+    print("Loading raw dataset...")
+    try:
+        return pd.read_csv(data_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Raw dataset not found at {data_path}")
+
+
 def load_dataset(project_root):
     data_path = (
         project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
     )
 
-    print("Loading dataset...")
+    print("Loading processed dataset...")
     try:
         return pd.read_csv(data_path)
     except FileNotFoundError:

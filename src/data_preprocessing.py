@@ -98,8 +98,12 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     # 1. ENGINEER THE SIZE FEATURE HERE
     if "Median_PSF" in df.columns:
         df["Estimated_Size"] = df["Median_Price"] / df["Median_PSF"]
+        df["Log_Estimated_Size"] = np.log1p(df["Estimated_Size"])
         # Drop Median_PSF so the model doesn't cheat by knowing the price-per-sqft directly
         df = df.drop(columns=["Median_PSF"])
+
+    if "Transactions" in df.columns:
+        df["Log_Transactions"] = np.log1p(df["Transactions"])
 
     # 2. REMOVE OUTLIERS FIRST
     df = remove_outliers_iqr(df, "Median_Price")
