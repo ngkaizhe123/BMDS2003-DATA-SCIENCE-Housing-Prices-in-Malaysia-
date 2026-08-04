@@ -30,9 +30,7 @@ def main():
     categorical_features = ["Area", "State", "Tenure"]
     numerical_features = [
         "Transactions",
-        "Estimated_Size",
         "Log_Estimated_Size",
-        "Log_Transactions",
     ]
 
     # Load raw dataset and run preprocessing pipeline ONCE

@@ -53,7 +53,7 @@ def main():
     )
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Estimated_Size"]
+    numerical_features = ["Transactions", "Log_Estimated_Size"]
 
     # 1. Load raw dataset and run preprocessing pipeline ONCE
     df = load_raw_dataset(project_root)
