@@ -29,7 +29,7 @@ def main():
     categorical_features = ["Area", "State", "Tenure"]
     numerical_features = [
         "Log_Estimated_Size",
-        "Log_Transactions",
+        "Transactions",
     ]
 
     # Load & clean row-by-row
