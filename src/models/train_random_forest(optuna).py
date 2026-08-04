@@ -8,7 +8,7 @@ from sklearn.compose import TransformedTargetRegressor
 import optuna
 from optuna.samplers import TPESampler
 
-# Point python path cleanly to src
+
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 sys.path.append(str(project_root.parent / "src"))
@@ -16,7 +16,8 @@ sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
-    load_raw_dataset,
+    load_processed_dataset,
+    remove_outliers_train_only,
     split_dataset,
     build_preprocessor,
     print_metrics,
@@ -53,28 +54,32 @@ def main():
     )
 
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Estimated_Size"]
+    numerical_features = [
+        "Log_Estimated_Size",
+        "Log_Transactions",
+    ]
 
-    # 1. Load raw dataset and run preprocessing pipeline ONCE
-    df = load_raw_dataset(project_root)
-    print("Running data preprocessing pipeline...")
-    df = run_preprocessing_pipeline(df)
-
+    # 1. Load & clean row-by-row
+    df = load_processed_dataset(project_root)
     type_features = [col for col in df.columns if col.startswith("Type_")]
-    print("-" * 45)
 
+    # 2. Split data
     print("Splitting data...")
     X_train, X_test, y_train, y_test = split_dataset(
         df, categorical_features, numerical_features, type_features
     )
 
-    # 2. Build preprocessor matching the existing pipeline setup
+    # 3. Remove outliers ONLY from the training set
+    print("Removing outliers from training data...")
+    X_train, y_train = remove_outliers_train_only(X_train, y_train, ["Log_Transactions"])
+
+    # 4. Build preprocessor (now handles medians and rare categories)
     print("Building preprocessing pipelines...")
     preprocessor = build_preprocessor(
         numerical_features, categorical_features, type_features
     )
 
-    # 3. Define Optuna objective function for hyperparameter tuning
+    # 5. Define Optuna objective function for hyperparameter tuning
     def objective(trial):
         params = {
             "n_estimators": trial.suggest_int("n_estimators", 600, 1100, step=50),
@@ -118,7 +123,7 @@ def main():
     print(f"Best CV R2 Score     : {study.best_value:.4f}")
     print("-" * 30)
 
-    # 4. Retrain best model on full training set using best params from Optuna
+    # 6. Retrain best model on full training set using best params from Optuna
     print("Training Random Forest Regression model with best parameters...")
     best_params = study.best_params
     best_model = TransformedTargetRegressor(
@@ -141,11 +146,11 @@ def main():
     print("Evaluating model...")
     y_pred = best_model.predict(X_test)
 
-    # 5. Print regression metrics (R², MAE, RMSE)
+    # 7. Print regression metrics (R², MAE, RMSE)
     print_metrics("Random Forest", y_test, y_pred)
     print("-" * 30)
 
-    # 6. Export trained model for your Streamlit deployment prototype
+    # 8. Export trained model for your Streamlit deployment prototype
     save_model(best_model, model_output_path)
 
 

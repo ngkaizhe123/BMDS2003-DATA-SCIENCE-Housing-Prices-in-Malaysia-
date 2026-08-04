@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np  # FIXED: Added missing numpy import
 import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -39,6 +40,22 @@ def prepare_input_features(input_dict: dict) -> pd.DataFrame:
     """Formats single-property user inputs into the exact DataFrame structure expected by trained models."""
     df = pd.DataFrame([input_dict])
 
+    # 1. Clean Text Columns
+    text_cols = ["Area", "State", "Tenure"]
+    for col in text_cols:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip().str.title()
+
+    # 2. Derive Log Features (FIXED: Ensure these match training exactly)
+    if "Estimated_Size" in df.columns:
+        df["Log_Estimated_Size"] = np.log1p(df["Estimated_Size"])
+    if "Transactions" in df.columns:
+        df["Log_Transactions"] = np.log1p(df["Transactions"])
+
+    # Drop the original numerical columns as the model only knows the "Log_" versions
+    df = df.drop(columns=["Estimated_Size", "Transactions"], errors="ignore")
+
+    # 3. Multi-Hot Encode Type Columns Safely
     all_type_cols = [
         "Type_Apartment",
         "Type_Bungalow",
@@ -143,37 +160,41 @@ def render_input_form(form_key):
     )
 
     # Preset logic
-    default_state, default_area, default_tenure, default_type, default_tx = (
+    default_state, default_area, default_tenure, default_type, default_tx, default_size = (
         "Selangor",
         "",
         "Freehold",
         "Terrace House",
         10,
+        1500
     )
 
     if preset_choice == "Sample: Luxury Condo in KL":
-        default_state, default_area, default_tenure, default_type, default_tx = (
+        default_state, default_area, default_tenure, default_type, default_tx,default_size = (
             "Kuala Lumpur",
             "Mont Kiara",
             "Freehold",
             "Condominium",
             45,
+            2200
         )
     elif preset_choice == "Sample: Standard Terrace in Johor":
-        default_state, default_area, default_tenure, default_type, default_tx = (
+        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
             "Johor",
             "Skudai",
             "Freehold",
             "Terrace House",
             120,
+            1400
         )
     elif preset_choice == "Sample: Affordable Flat in Penang":
-        default_state, default_area, default_tenure, default_type, default_tx = (
+        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
             "Penang",
             "Ayer Itam",
             "Leasehold",
             "Flat",
             35,
+            650
         )
 
     user_features = None
@@ -233,6 +254,11 @@ def render_input_form(form_key):
                 options=type_options,
                 index=type_options.index(default_type),
             )
+
+            estimated_size = st.number_input(
+                "Estimated Size (sqft)", min_value=100, max_value=50000, value=default_size, step=50
+            )
+
             transactions = st.number_input(
                 "Number of Transactions", min_value=1, value=default_tx
             )
@@ -248,6 +274,7 @@ def render_input_form(form_key):
                     "State": state,
                     "Tenure": tenure,
                     "Type": prop_type,
+                    "Estimated_Size": estimated_size,
                     "Transactions": transactions,
                 }
 

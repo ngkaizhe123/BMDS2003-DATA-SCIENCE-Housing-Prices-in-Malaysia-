@@ -16,7 +16,8 @@ sys.path.append(str(project_root))
 
 from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
-    load_raw_dataset,
+    load_processed_dataset,
+    remove_outliers_train_only,
     split_dataset,
     build_preprocessor,
     print_metrics,
@@ -29,27 +30,25 @@ def main():
 
     categorical_features = ["Area", "State", "Tenure"]
     numerical_features = [
-        "Transactions",
-        "Estimated_Size",
         "Log_Estimated_Size",
         "Log_Transactions",
     ]
 
-    # Load raw dataset and run preprocessing pipeline ONCE
-    df = load_raw_dataset(project_root)
-
-    print("Running data preprocessing pipeline...")
-    df = run_preprocessing_pipeline(df)
-
+    # Load & clean row-by-row
+    df = load_processed_dataset(project_root)
     type_features = [col for col in df.columns if col.startswith("Type_")]
 
+    # Split data
     print("Splitting data...")
-    # This effectively drops Township and Median_PSF, preventing data leakage
     X_train, X_test, y_train, y_test = split_dataset(
         df, categorical_features, numerical_features, type_features
     )
 
-    # Build preprocessor using utils
+    # Remove outliers ONLY from the training set
+    print("Removing outliers from training data...")
+    X_train, y_train = remove_outliers_train_only(X_train, y_train, ["Log_Transactions"])
+
+    # Build preprocessor (now handles medians and rare categories)
     print("Building preprocessing pipelines...")
     preprocessor = build_preprocessor(
         numerical_features, categorical_features, type_features
