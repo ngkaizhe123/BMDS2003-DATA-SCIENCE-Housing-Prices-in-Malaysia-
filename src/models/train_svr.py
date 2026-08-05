@@ -72,9 +72,17 @@ def main():
     # Hyperparameter search space
     param_dist = {
         "regressor__regressor__kernel": ["rbf", "linear"],
-        "regressor__regressor__C": [0.5, 1, 2,5,10,20],
+        "regressor__regressor__C": [0.5, 1, 2, 5, 10, 20],
         "regressor__regressor__epsilon": [0.01, 0.05, 0.1, 0.15, 0.2],
-        "regressor__regressor__gamma": ["scale", 0.0005,0.001, 0.002, 0.005, 0.01, 0.02],
+        "regressor__regressor__gamma": [
+            "scale",
+            0.0005,
+            0.001,
+            0.002,
+            0.005,
+            0.01,
+            0.02,
+        ],
         "regressor__feature_selection__k": [15, 18, 20, "all"],
     }
 
