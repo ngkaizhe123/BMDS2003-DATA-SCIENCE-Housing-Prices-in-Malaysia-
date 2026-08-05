@@ -39,8 +39,6 @@ def split_dataset(
     y = df[target]
 
     # Only stratify by State if every state has at least 2 rows
-    # Rare states that slipped through preprocessing (e.g. Putrajaya with 1 row)
-    # will crash stratify — so we fall back to a normal split in that case
     state_counts = df["State"].value_counts()
     rare_states = state_counts[state_counts < 2].index
 
