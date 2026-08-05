@@ -148,6 +148,7 @@ def prepare_input_features(input_dict: dict) -> pd.DataFrame:
 
     return df
 
+
 # for models analysis and comparison
 def save_metrics(model_name: str, metrics: dict, output_path: Path):
     output_path.parent.mkdir(parents=True, exist_ok=True)

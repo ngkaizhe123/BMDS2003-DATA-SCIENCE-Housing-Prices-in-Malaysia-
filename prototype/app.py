@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -13,6 +14,7 @@ st.set_page_config(page_title="Housing Model Predictor", page_icon="🏠", layou
 # =========================================================
 # 2. BACKEND SERVICE LAYER
 # =========================================================
+
 
 @st.cache_resource
 def load_models():
@@ -44,7 +46,9 @@ def load_area_frequencies():
     """Area counts from the cleaned training data, used to warn users when a
     typed-in Area is rare or unseen in training."""
     project_root = Path(__file__).resolve().parent.parent
-    data_path = project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
+    data_path = (
+        project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
+    )
     if not data_path.exists():
         return None
     df = pd.read_csv(data_path)
@@ -62,10 +66,11 @@ def load_area_frequencies():
 # feature lists that can silently drift out of sync with training code.
 # ---------------------------------------------------------
 
+
 def _unwrap_column_transformer(model):
     """Return the fitted ColumnTransformer inside a model pipeline, if any."""
     candidate = model
-    if hasattr(candidate, "regressor_"):        # fitted TransformedTargetRegressor
+    if hasattr(candidate, "regressor_"):  # fitted TransformedTargetRegressor
         candidate = candidate.regressor_
     elif hasattr(candidate, "regressor"):
         candidate = candidate.regressor
@@ -109,7 +114,11 @@ def _get_onehot_categories(model, raw_col_name):
         for _, transformer, cols in ct.transformers_:
             cols = list(cols)
             if raw_col_name in cols:
-                ohe = transformer.named_steps.get("onehot") if hasattr(transformer, "named_steps") else transformer
+                ohe = (
+                    transformer.named_steps.get("onehot")
+                    if hasattr(transformer, "named_steps")
+                    else transformer
+                )
                 if hasattr(ohe, "categories_"):
                     idx = cols.index(raw_col_name)
                     return set(ohe.categories_[idx])
@@ -143,6 +152,7 @@ def resolve_area_category(model, area_name, state_name):
 # ---------------------------------------------------------
 # Feature preparation
 # ---------------------------------------------------------
+
 
 def prepare_input_features(raw_input: dict, expected_columns: list):
     """
@@ -180,7 +190,9 @@ def prepare_input_features(raw_input: dict, expected_columns: list):
                 row[col] = float(np.log1p(raw_input[base_col]))
                 continue
         row[col] = 0
-        notes.append(f"Missing features '{col}', filled with 0 by default, but prediction may be less accurate.")
+        notes.append(
+            f"Missing features '{col}', filled with 0 by default, but prediction may be less accurate."
+        )
 
     df = pd.DataFrame([row])[expected_columns]
     return df, notes
@@ -233,6 +245,7 @@ def area_reliability_note(area_freq, area_name, threshold=5):
 # SHAP explanation (tree models only: XGBoost, Random Forest)
 # ---------------------------------------------------------
 
+
 def explain_tree_prediction(model, raw_input: dict):
     """Best-effort SHAP waterfall for tree-based models. Returns a matplotlib
     figure, or None if unavailable (missing shap, or non-tree model)."""
@@ -242,7 +255,9 @@ def explain_tree_prediction(model, raw_input: dict):
         return None
 
     regressor = _unwrap_regressor(model)
-    is_tree_model = hasattr(regressor, "get_booster") or hasattr(regressor, "estimators_")
+    is_tree_model = hasattr(regressor, "get_booster") or hasattr(
+        regressor, "estimators_"
+    )
     if regressor is None or not is_tree_model:
         return None
 
@@ -352,7 +367,14 @@ def render_input_form(form_key):
         key=f"preset_{form_key}",
     )
 
-    default_state, default_area, default_tenure, default_type, default_tx, default_size = (
+    (
+        default_state,
+        default_area,
+        default_tenure,
+        default_type,
+        default_tx,
+        default_size,
+    ) = (
         "Selangor",
         "",
         "Freehold",
@@ -362,7 +384,14 @@ def render_input_form(form_key):
     )
 
     if preset_choice == "Sample: Luxury Condo in KL":
-        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
+        (
+            default_state,
+            default_area,
+            default_tenure,
+            default_type,
+            default_tx,
+            default_size,
+        ) = (
             "Kuala Lumpur",
             "Mont Kiara",
             "Freehold",
@@ -371,7 +400,14 @@ def render_input_form(form_key):
             1450,
         )
     elif preset_choice == "Sample: Standard Terrace in Johor":
-        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
+        (
+            default_state,
+            default_area,
+            default_tenure,
+            default_type,
+            default_tx,
+            default_size,
+        ) = (
             "Johor",
             "Skudai",
             "Freehold",
@@ -380,7 +416,14 @@ def render_input_form(form_key):
             1800,
         )
     elif preset_choice == "Sample: Affordable Flat in Penang":
-        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
+        (
+            default_state,
+            default_area,
+            default_tenure,
+            default_type,
+            default_tx,
+            default_size,
+        ) = (
             "Penang",
             "Ayer Itam",
             "Leasehold",
@@ -483,6 +526,7 @@ def render_input_form(form_key):
 # =========================================================
 # 3. FRONTEND UI & CONTROLLER LAYOUT
 # =========================================================
+
 
 def main():
     st.title("🏠 Malaysia Housing Price Predictor")
@@ -610,28 +654,125 @@ def main():
     # --- TAB 3: MODEL ANALYTICS ---
     with tab3:
         st.subheader("Model Evaluation")
-        st.markdown("View training metrics and evaluation plots.")
+        st.markdown("Compare training vs test performance across all trained models.")
 
-        prototype_dir = Path(__file__).resolve().parent
-        plots_dir = prototype_dir.parent / "report_assets" / "plots"
+        current_path = Path(__file__).resolve().parent
+        project_root = current_path.parent
+        metrics_path = project_root / "report_assets" / "metrics.json"
 
-        plot_files = {
-            "Linear Regression": plots_dir / "actual_vs_predicted_advanced.png",
-            "XGBoost": plots_dir / "actual_vs_predicted_xgboost.png",
-            "Random Forest": plots_dir / "actual_vs_predicted_randomforest.png",
-            "SVR": plots_dir / "actual_vs_predicted_svr.png",
-        }
-
-        found_plot = False
-        for name, path in plot_files.items():
-            if path.exists():
-                st.image(str(path), caption=f"Actual vs Predicted Values ({name})")
-                found_plot = True
-
-        if not found_plot:
+        if not metrics_path.exists():
             st.info(
-                "Evaluation plots not found. Run your visualization scripts to generate them."
+                "No `metrics.json` found. "
+                "Please call `save_metrics(model_name, metrics_dict, prototype_dir / 'metrics.json')` to generate and display the comparison results."
+                "Here it will automatically generate and display the comparison results."
             )
+        else:
+            with open(metrics_path, "r") as f:
+                all_metrics = json.load(f)
+
+            if not all_metrics:
+                st.info(
+                    "`metrics.json` is empty, no models have been written to metrics yet."
+                )
+            else:
+                metrics_df = pd.DataFrame(all_metrics).T
+                metrics_df.index.name = "Model"
+
+                required_cols = [
+                    "train_r2",
+                    "test_r2",
+                    "train_mae",
+                    "test_mae",
+                    "train_rmse",
+                    "test_rmse",
+                ]
+                for col in required_cols:
+                    if col not in metrics_df.columns:
+                        metrics_df[col] = np.nan
+
+                st.markdown("### Metrics Comparison Table")
+                display_df = metrics_df.copy()
+                display_df["train_r2"] = display_df["train_r2"].map(
+                    lambda x: f"{x:.4f}" if pd.notna(x) else "—"
+                )
+                display_df["test_r2"] = display_df["test_r2"].map(
+                    lambda x: f"{x:.4f}" if pd.notna(x) else "—"
+                )
+                for col in ["train_mae", "test_mae", "train_rmse", "test_rmse"]:
+                    display_df[col] = display_df[col].map(
+                        lambda x: f"RM {x:,.0f}" if pd.notna(x) else "—"
+                    )
+
+                display_df = display_df.rename(
+                    columns={
+                        "train_r2": "Train R²",
+                        "test_r2": "Test R²",
+                        "train_mae": "Train MAE",
+                        "test_mae": "Test MAE",
+                        "train_rmse": "Train RMSE",
+                        "test_rmse": "Test RMSE",
+                    }
+                )
+                st.dataframe(display_df, use_container_width=True)
+
+                st.markdown("### R² Comparison (Train vs Test)")
+                st.caption(
+                    "The greater the difference between Train and Test, the more likely the model is overfitting."
+                )
+                fig, ax = plt.subplots(figsize=(8, 5))
+                x = np.arange(len(metrics_df))
+                width = 0.35
+                ax.bar(
+                    x - width / 2,
+                    metrics_df["train_r2"],
+                    width,
+                    label="Train R²",
+                    color="#74b9ff",
+                )
+                ax.bar(
+                    x + width / 2,
+                    metrics_df["test_r2"],
+                    width,
+                    label="Test R²",
+                    color="#00b894",
+                )
+                ax.set_xticks(x)
+                ax.set_xticklabels(metrics_df.index, rotation=15)
+                ax.set_ylabel("R² Score")
+                ax.set_title("Train vs Test R² by Model", fontweight="bold")
+                ax.axhline(0, color="gray", linewidth=0.8)
+                ax.legend()
+                st.pyplot(fig)
+
+                st.markdown("### Test MAE Comparison")
+                st.caption(
+                    "Lower values represent smaller average prediction errors on the test set."
+                )
+                fig2, ax2 = plt.subplots(figsize=(8, 5))
+                sns.barplot(
+                    x=metrics_df.index,
+                    y=metrics_df["test_mae"],
+                    ax=ax2,
+                    hue=metrics_df.index,
+                    palette="Set2",
+                    legend=False,
+                )
+                ax2.set_ylabel("Test MAE (RM)")
+                ax2.set_xlabel("")
+                ax2.set_title("Test MAE by Model (lower is better)", fontweight="bold")
+                ax2.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda x, p: format(int(x), ","))
+                )
+                for p in ax2.patches:
+                    ax2.annotate(
+                        f"RM {p.get_height():,.0f}",
+                        (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                        ha="center",
+                        va="bottom",
+                        xytext=(0, 5),
+                        textcoords="offset points",
+                    )
+                st.pyplot(fig2)
 
 
 if __name__ == "__main__":

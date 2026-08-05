@@ -20,7 +20,8 @@ from src.utils import (
     split_dataset,
     build_preprocessor,
     print_metrics,
-    save_model, save_metrics,
+    save_model,
+    save_metrics,
 )
 
 
