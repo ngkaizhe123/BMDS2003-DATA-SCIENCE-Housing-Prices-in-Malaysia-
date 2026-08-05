@@ -47,8 +47,10 @@ def _remove_correlated_type_features(df, type_features, threshold=0.90):
                 to_drop.add(type_features[j])
 
     if to_drop:
-        print(f"[SVR] Dropping {len(to_drop)} highly-correlated type feature(s): "
-              f"{sorted(to_drop)}")
+        print(
+            f"[SVR] Dropping {len(to_drop)} highly-correlated type feature(s): "
+            f"{sorted(to_drop)}"
+        )
         df = df.drop(columns=list(to_drop))
 
     remaining = [f for f in type_features if f not in to_drop]
@@ -179,8 +181,8 @@ def main():
 
     print(f"Train R\u00b2  : {train_r2:.4f}")
     print(f"Test R\u00b2   : {test_r2:.4f}")
-    #remove later
-    gap=train_r2-test_r2
+    # remove later
+    gap = train_r2 - test_r2
     print(f"Gap Test R\u00b2   : {gap:4f}")
 
     # Print regression metrics (R2, MAE, RMSE)
