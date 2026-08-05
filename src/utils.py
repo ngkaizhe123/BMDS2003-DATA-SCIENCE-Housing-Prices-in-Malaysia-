@@ -4,7 +4,12 @@ from sklearn.model_selection import train_test_split
 import joblib
 import pandas as pd
 from pathlib import Path
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+    mean_absolute_percentage_error,
+)
 import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -75,6 +80,7 @@ def print_metrics(model_name, y_true, y_pred):
     # 1. Calculate Real-World Metrics
     mae = mean_absolute_error(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    mape = mean_absolute_percentage_error(y_true, y_pred)
     r2 = r2_score(y_true, y_pred)
 
     # 2. Calculate Log-Transformed Metrics (The "0.something" illusion)
@@ -84,6 +90,7 @@ def print_metrics(model_name, y_true, y_pred):
 
     log_mae = mean_absolute_error(y_true_log, y_pred_log)
     log_rmse = np.sqrt(mean_squared_error(y_true_log, y_pred_log))
+    log_mape = mean_absolute_percentage_error(y_true_log, y_pred_log)
 
     # Note: R-squared usually remains identical or very similar because it measures
     # variance explained, which scales proportionally.
@@ -96,15 +103,17 @@ def print_metrics(model_name, y_true, y_pred):
     print("REAL-WORLD METRICS (Actual Ringgit):")
     print(f"MAE: RM {mae:,.2f}")
     print(f"RMSE: RM {rmse:,.2f}")
+    print(f"MAPE: {mape * 100:.2f}%")
     print(f"R² : {r2:.4f}")
     print("-" * 45)
     print("LOG-TRANSFORMED METRICS:")
     print(f"Log MAE: {log_mae:.4f}")
     print(f"Log RMSE: {log_rmse:.4f}")
+    print(f"Log MAPE: {log_mape * 100:.2f}%")
     print(f"Log R²: {log_r2:.4f}")
     print("-" * 45)
 
-    return mae, rmse, r2
+    return mae, rmse, r2, mape
 
 
 def save_model(model, output_path):
