@@ -44,9 +44,6 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
         df["Log_Estimated_Size"] = np.log1p(df["Estimated_Size"])
         df = df.drop(columns=["Median_PSF"])  # Drop to prevent leakage
 
-    if "Transactions" in df.columns:
-        df["Log_Transactions"] = np.log1p(df["Transactions"])
-
     # 4. Encode Type
     df = multi_hot_encode_type(df)
 
