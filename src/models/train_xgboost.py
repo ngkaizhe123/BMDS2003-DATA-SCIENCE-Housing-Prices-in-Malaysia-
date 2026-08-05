@@ -20,7 +20,7 @@ from src.utils import (
     split_dataset,
     build_preprocessor,
     print_metrics,
-    save_model,
+    save_model, save_metrics,
 )
 
 
@@ -130,6 +130,19 @@ def main():
 
     # Print metrics using utils
     print_metrics("XGBoost", y_test, y_pred)
+    metrics_output_path = project_root / "report_assets" / "metrics.json"
+    save_metrics(
+        "XGBoost",
+        {
+            "train_r2": train_r2,
+            "test_r2": test_r2,
+            "train_mae": train_mae,
+            "test_mae": test_mae,
+            "train_rmse": train_rmse,
+            "test_rmse": test_rmse,
+        },
+        metrics_output_path,
+    )
 
     print(f"Best parameters found: {search.best_params_}")
     print(f"Best Model R2 Score: {search.best_score_}")

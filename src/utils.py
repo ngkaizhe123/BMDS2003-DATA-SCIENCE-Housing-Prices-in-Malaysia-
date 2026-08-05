@@ -1,3 +1,4 @@
+import json
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 import joblib
@@ -115,10 +116,6 @@ def save_model(model, output_path):
     print(f"Model saved to {output_path}")
 
 
-def load_model(path):
-    return joblib.load(path)
-
-
 def prepare_input_features(input_dict: dict) -> pd.DataFrame:
     """Formats single-property user inputs into the exact DataFrame structure expected by trained models."""
     df = pd.DataFrame([input_dict])
@@ -150,3 +147,20 @@ def prepare_input_features(input_dict: dict) -> pd.DataFrame:
                 df[col] = 0
 
     return df
+
+# for models analysis and comparison
+def save_metrics(model_name: str, metrics: dict, output_path: Path):
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if output_path.exists():
+        with open(output_path, "r") as f:
+            all_metrics = json.load(f)
+    else:
+        all_metrics = {}
+
+    all_metrics[model_name] = metrics
+
+    with open(output_path, "w") as f:
+        json.dump(all_metrics, f, indent=2)
+
+    print(f"Metrics for {model_name} saved to {output_path}")

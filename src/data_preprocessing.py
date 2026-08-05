@@ -33,12 +33,14 @@ def standardize_text_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
             df_clean[col] = df_clean[col].replace(r"\s+", " ", regex=True)
     return df_clean
 
+
 def remove_township(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = df.copy()
     if "Township" in df_clean.columns:
         df_clean = df_clean.drop(columns=["Township"])
         print("[*] Township column removed.")
     return df_clean
+
 
 def clean_state(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = df.copy()

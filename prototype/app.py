@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -9,7 +10,10 @@ from pathlib import Path
 st.set_page_config(page_title="Housing Model Predictor", page_icon="🏠", layout="wide")
 
 
-# 2. BACKEND SERVICE LAYER (Internal Functions)
+# =========================================================
+# 2. BACKEND SERVICE LAYER
+# =========================================================
+
 @st.cache_resource
 def load_models():
     """Loads all available models from the prototype directory."""
@@ -35,42 +39,250 @@ def load_models():
     return models
 
 
-def prepare_input_features(input_dict: dict) -> pd.DataFrame:
-    """Formats single-property user inputs into the exact DataFrame structure expected by trained models."""
-    df = pd.DataFrame([input_dict])
+@st.cache_data
+def load_area_frequencies():
+    """Area counts from the cleaned training data, used to warn users when a
+    typed-in Area is rare or unseen in training."""
+    project_root = Path(__file__).resolve().parent.parent
+    data_path = project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
+    if not data_path.exists():
+        return None
+    df = pd.read_csv(data_path)
+    if "Area" not in df.columns:
+        return None
+    return df["Area"].value_counts()
 
-    all_type_cols = [
-        "Type_Apartment",
-        "Type_Bungalow",
-        "Type_Cluster House",
-        "Type_Condominium",
-        "Type_Flat",
-        "Type_Semi D",
-        "Type_Service Residence",
-        "Type_Terrace House",
-        "Type_Town House",
-    ]
 
-    if "Type" in df.columns:
-        selected_type = str(df["Type"].iloc[0])
-        selected_types = [t.strip() for t in selected_type.split(",")]
+# ---------------------------------------------------------
+# Pipeline introspection helpers
+#
+# These walk into the fitted model (which may be wrapped in a
+# TransformedTargetRegressor, then a Pipeline, then a ColumnTransformer)
+# to recover exactly what the model expects, instead of hardcoding
+# feature lists that can silently drift out of sync with training code.
+# ---------------------------------------------------------
 
-        for col in all_type_cols:
+def _unwrap_column_transformer(model):
+    """Return the fitted ColumnTransformer inside a model pipeline, if any."""
+    candidate = model
+    if hasattr(candidate, "regressor_"):        # fitted TransformedTargetRegressor
+        candidate = candidate.regressor_
+    elif hasattr(candidate, "regressor"):
+        candidate = candidate.regressor
+
+    if hasattr(candidate, "named_steps"):
+        for step in candidate.named_steps.values():
+            if hasattr(step, "transformers_") and hasattr(step, "feature_names_in_"):
+                return step
+
+    if hasattr(candidate, "transformers_") and hasattr(candidate, "feature_names_in_"):
+        return candidate
+
+    return None
+
+
+def _unwrap_regressor(model):
+    """Return the fitted final estimator (e.g. XGBRegressor, RandomForestRegressor)."""
+    candidate = model
+    if hasattr(candidate, "regressor_"):
+        candidate = candidate.regressor_
+    if hasattr(candidate, "named_steps"):
+        return candidate.named_steps.get("regressor")
+    return candidate
+
+
+def get_expected_columns(model):
+    """The exact raw input columns the model's preprocessor was fit on."""
+    ct = _unwrap_column_transformer(model)
+    if ct is not None and hasattr(ct, "feature_names_in_"):
+        return list(ct.feature_names_in_)
+    return None
+
+
+def _get_onehot_categories(model, raw_col_name):
+    """Known categories for a one-hot-encoded raw column (e.g. 'Area'), so we
+    can detect when a user's typed-in value was never seen during training."""
+    ct = _unwrap_column_transformer(model)
+    if ct is None:
+        return None
+    try:
+        for _, transformer, cols in ct.transformers_:
+            cols = list(cols)
+            if raw_col_name in cols:
+                ohe = transformer.named_steps.get("onehot") if hasattr(transformer, "named_steps") else transformer
+                if hasattr(ohe, "categories_"):
+                    idx = cols.index(raw_col_name)
+                    return set(ohe.categories_[idx])
+    except Exception:
+        return None
+    return None
+
+
+def resolve_area_category(model, area_name, state_name):
+    """
+    Training buckets rare Areas into 'Other_<State>'. Mirror that here so a
+    typed-in Area the model never saw doesn't silently get zeroed out by
+    OneHotEncoder(handle_unknown='ignore') without the user knowing.
+
+    Returns (resolved_area, was_remapped).
+    """
+    known_areas = _get_onehot_categories(model, "Area")
+    if known_areas is None:
+        return area_name, False  # can't verify — pass through as-is
+
+    if area_name in known_areas:
+        return area_name, False
+
+    fallback = f"Other_{state_name}"
+    if fallback in known_areas:
+        return fallback, True
+
+    return area_name, True  # still unresolved, encoder will zero it out
+
+
+# ---------------------------------------------------------
+# Feature preparation
+# ---------------------------------------------------------
+
+def prepare_input_features(raw_input: dict, expected_columns: list):
+    """
+    Build a single-row DataFrame matching exactly what the trained
+    preprocessor expects (pulled live from the model via `feature_names_in_`),
+    so this never drifts out of sync with the training script again.
+
+    Returns (df, notes) — notes describes any columns that had to be
+    auto-derived or defaulted.
+    """
+    notes = []
+    row = {}
+
+    # Direct raw fields (Area, State, Tenure, Transactions, ...)
+    for col in expected_columns:
+        if col in raw_input:
+            row[col] = raw_input[col]
+
+    # Type_* multi-hot columns, derived from the raw "Type" selection
+    type_cols = [c for c in expected_columns if c.startswith("Type_")]
+    if type_cols and "Type" in raw_input:
+        selected_types = [t.strip() for t in str(raw_input["Type"]).split(",")]
+        for col in type_cols:
             raw_type_name = col.replace("Type_", "")
-            df[col] = 1 if raw_type_name in selected_types else 0
+            row[col] = 1 if raw_type_name in selected_types else 0
 
-        df = df.drop(columns=["Type"])
-    else:
-        for col in all_type_cols:
-            if col not in df.columns:
-                df[col] = 0
+    # Any remaining expected column: try to auto-derive Log_X from X,
+    # otherwise fall back to a safe default and flag it.
+    for col in expected_columns:
+        if col in row:
+            continue
+        if col.startswith("Log_"):
+            base_col = col.replace("Log_", "")
+            if base_col in raw_input:
+                row[col] = float(np.log1p(raw_input[base_col]))
+                continue
+        row[col] = 0
+        notes.append(f"Missing features '{col}', filled with 0 by default, but prediction may be less accurate.")
 
-    return df
+    df = pd.DataFrame([row])[expected_columns]
+    return df, notes
 
 
-def predict_price(model, input_dict: dict) -> float:
-    df = prepare_input_features(input_dict)
-    return float(model.predict(df)[0])
+def predict_price(model, raw_input: dict):
+    """Predict price and return (prediction, notes) where notes are
+    user-facing caveats about the prediction's reliability."""
+    expected_columns = get_expected_columns(model)
+    if expected_columns is None:
+        raise ValueError(
+            "Unable to read expected feature columns from the model (missing feature_names_in_)."
+            "Please confirm the model is trained and saved using a more recent version of the pipeline."
+        )
+
+    notes = []
+    working_input = dict(raw_input)
+
+    if "Area" in working_input and "State" in working_input:
+        resolved_area, remapped = resolve_area_category(
+            model, working_input["Area"], working_input["State"]
+        )
+        if remapped:
+            notes.append(
+                f"'{working_input['Area']}' not in training data's known areas, "
+                f"reverted to using '{resolved_area}' (state-level estimate), prediction accuracy may be compromised."
+            )
+        working_input["Area"] = resolved_area
+
+    df, fill_notes = prepare_input_features(working_input, expected_columns)
+    notes.extend(fill_notes)
+
+    pred = float(model.predict(df)[0])
+    return pred, notes
+
+
+def area_reliability_note(area_freq, area_name, threshold=5):
+    """Extra warning based on how many training rows actually back this Area."""
+    if area_freq is None:
+        return None
+    count = int(area_freq.get(area_name, 0))
+    if count == 0:
+        return None  # already covered by resolve_area_category's note
+    if count < threshold:
+        return f"Note: Training data only has {count} records for '{area_name}', prediction stability may be compromised."
+    return None
+
+
+# ---------------------------------------------------------
+# SHAP explanation (tree models only: XGBoost, Random Forest)
+# ---------------------------------------------------------
+
+def explain_tree_prediction(model, raw_input: dict):
+    """Best-effort SHAP waterfall for tree-based models. Returns a matplotlib
+    figure, or None if unavailable (missing shap, or non-tree model)."""
+    try:
+        import shap
+    except ImportError:
+        return None
+
+    regressor = _unwrap_regressor(model)
+    is_tree_model = hasattr(regressor, "get_booster") or hasattr(regressor, "estimators_")
+    if regressor is None or not is_tree_model:
+        return None
+
+    ct = _unwrap_column_transformer(model)
+    expected_columns = get_expected_columns(model)
+    if ct is None or expected_columns is None:
+        return None
+
+    working_input = dict(raw_input)
+    if "Area" in working_input and "State" in working_input:
+        resolved_area, _ = resolve_area_category(
+            model, working_input["Area"], working_input["State"]
+        )
+        working_input["Area"] = resolved_area
+
+    df, _ = prepare_input_features(working_input, expected_columns)
+
+    try:
+        X_transformed = ct.transform(df)
+        if hasattr(X_transformed, "toarray"):
+            X_transformed = X_transformed.toarray()
+        feature_names = ct.get_feature_names_out()
+
+        explainer = shap.TreeExplainer(regressor)
+        shap_values = explainer.shap_values(X_transformed)
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        shap.plots.waterfall(
+            shap.Explanation(
+                values=shap_values[0],
+                base_values=explainer.expected_value,
+                data=X_transformed[0],
+                feature_names=feature_names,
+            ),
+            show=False,
+        )
+        plt.tight_layout()
+        return fig
+    except Exception:
+        return None
 
 
 def plot_market_comparison(state, prop_type, predicted_price, title="Market Benchmark"):
@@ -98,11 +310,9 @@ def plot_market_comparison(state, prop_type, predicted_price, title="Market Benc
     if prop_type in medians.index:
         x_pos = list(medians.index).index(prop_type)
 
-        # Enhanced Marker mimicking the PDF's green indicator badge
         ax.scatter(x_pos, predicted_price, color="#00b894", s=250, marker="*", zorder=5)
         ax.axhline(y=predicted_price, color="#00b894", linestyle="--", alpha=0.8)
 
-        # Add the badge text box
         ax.text(
             x_pos + 0.2,
             predicted_price,
@@ -142,38 +352,41 @@ def render_input_form(form_key):
         key=f"preset_{form_key}",
     )
 
-    # Preset logic
-    default_state, default_area, default_tenure, default_type, default_tx = (
+    default_state, default_area, default_tenure, default_type, default_tx, default_size = (
         "Selangor",
         "",
         "Freehold",
         "Terrace House",
         10,
+        1200,
     )
 
     if preset_choice == "Sample: Luxury Condo in KL":
-        default_state, default_area, default_tenure, default_type, default_tx = (
+        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
             "Kuala Lumpur",
             "Mont Kiara",
             "Freehold",
             "Condominium",
             45,
+            1450,
         )
     elif preset_choice == "Sample: Standard Terrace in Johor":
-        default_state, default_area, default_tenure, default_type, default_tx = (
+        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
             "Johor",
             "Skudai",
             "Freehold",
             "Terrace House",
             120,
+            1800,
         )
     elif preset_choice == "Sample: Affordable Flat in Penang":
-        default_state, default_area, default_tenure, default_type, default_tx = (
+        default_state, default_area, default_tenure, default_type, default_tx, default_size = (
             "Penang",
             "Ayer Itam",
             "Leasehold",
             "Flat",
             35,
+            750,
         )
 
     user_features = None
@@ -236,6 +449,18 @@ def render_input_form(form_key):
             transactions = st.number_input(
                 "Number of Transactions", min_value=1, value=default_tx
             )
+            estimated_size = st.number_input(
+                "Estimated Built-up Size (sqft)",
+                min_value=200,
+                max_value=20000,
+                value=default_size,
+                step=50,
+                help="Estimated built-up size of the property (square feet). This is a manual estimate, not an exact measurement.",
+            )
+            st.caption(
+                "⚠️ This value is a manual estimate, and the model was trained using area derived from prices. "
+                "There may be differences between the manual estimate and the training distribution, and the prediction should be taken as a reference only. "
+            )
 
         submitted = st.form_submit_button("Predict Price", use_container_width=True)
 
@@ -249,16 +474,22 @@ def render_input_form(form_key):
                     "Tenure": tenure,
                     "Type": prop_type,
                     "Transactions": transactions,
+                    "Estimated_Size": estimated_size,
                 }
 
     return user_features
 
 
+# =========================================================
 # 3. FRONTEND UI & CONTROLLER LAYOUT
+# =========================================================
+
 def main():
     st.title("🏠 Malaysia Housing Price Predictor")
 
     models = load_models()
+    area_freq = load_area_frequencies()
+
     if not models:
         st.error(
             "No models detected in `/prototype`. Please run your training scripts first."
@@ -280,12 +511,20 @@ def main():
 
         if user_features:
             try:
-                pred = predict_price(selected_model, user_features)
+                pred, notes = predict_price(selected_model, user_features)
+
                 st.success("Analysis Complete!")
                 st.metric(
                     label=f"Estimated Median Price ({selected_model_name})",
                     value=f"RM {pred:,.2f}",
                 )
+
+                area_note = area_reliability_note(area_freq, user_features["Area"])
+                if area_note:
+                    notes.append(area_note)
+
+                for note in notes:
+                    st.warning(note)
 
                 st.markdown("---")
                 plot_market_comparison(
@@ -294,6 +533,15 @@ def main():
                     pred,
                     title=f"Market Benchmark ({selected_model_name})",
                 )
+
+                shap_fig = explain_tree_prediction(selected_model, user_features)
+                if shap_fig is not None:
+                    with st.expander("🔍 Why? (SHAP Explanation)"):
+                        st.caption(
+                            "Values represent the contribution of each feature in the log price space, positive values represent an increase in the predicted price, and negative values represent a decrease."
+                        )
+                        st.pyplot(shap_fig)
+
             except Exception as e:
                 st.error(f"Inference pipeline issue: {e}")
 
@@ -316,17 +564,22 @@ def main():
             cols = st.columns(len(models))
 
             predictions = {}
+            all_notes = {}
             for idx, (m_name, m_obj) in enumerate(models.items()):
                 try:
-                    pred = predict_price(m_obj, comp_features)
+                    pred, notes = predict_price(m_obj, comp_features)
                     predictions[m_name] = pred
+                    all_notes[m_name] = notes
                     cols[idx].metric(label=m_name, value=f"RM {pred:,.2f}")
                 except Exception as e:
                     cols[idx].error(f"Error with {m_name}: {e}")
 
+            flat_notes = sorted({n for notes in all_notes.values() for n in notes})
+            for note in flat_notes:
+                st.warning(note)
+
             if predictions:
                 st.markdown("---")
-                # Plot side-by-side comparison
                 fig, ax = plt.subplots(figsize=(8, 5))
                 sns.barplot(
                     x=list(predictions.keys()),
@@ -342,7 +595,6 @@ def main():
                     plt.FuncFormatter(lambda x, p: format(int(x), ","))
                 )
 
-                # Add value labels on top of bars
                 for p in ax.patches:
                     ax.annotate(
                         f"RM {p.get_height():,.0f}",

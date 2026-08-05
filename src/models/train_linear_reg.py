@@ -2,6 +2,7 @@ import numpy as np
 import sys
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.pipeline import Pipeline
 from sklearn.compose import TransformedTargetRegressor
 
@@ -18,6 +19,7 @@ from src.utils import (
     build_preprocessor,
     print_metrics,
     save_model,
+    save_metrics,
 )
 
 
@@ -62,8 +64,48 @@ def main():
     print("Evaluating model...")
     y_pred = model_pipeline.predict(X_test)
 
+    # =============================
+    # Train vs Test Performance
+    # =============================
+
+    y_train_pred = model_pipeline.predict(X_train)
+
+    train_r2 = r2_score(y_train, y_train_pred)
+    test_r2 = r2_score(y_test, y_pred)
+
+    train_mae = mean_absolute_error(y_train, y_train_pred)
+    test_mae = mean_absolute_error(y_test, y_pred)
+
+    train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
+    test_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    print("\nTrain vs Test Performance")
+    print("-" * 40)
+
+    print(f"Train MAE : RM {train_mae:,.2f}")
+    print(f"Test MAE  : RM {test_mae:,.2f}")
+
+    print(f"Train RMSE: RM {train_rmse:,.2f}")
+    print(f"Test RMSE : RM {test_rmse:,.2f}")
+
+    print(f"Train R\u00b2  : {train_r2:.4f}")
+    print(f"Test R\u00b2   : {test_r2:.4f}")
+
     # Print metrics using utils
     print_metrics("Linear Regression", y_test, y_pred)
+    metrics_output_path = project_root / "report_assets" / "metrics.json"
+    save_metrics(
+        "Linear Regression",
+        {
+            "train_r2": train_r2,
+            "test_r2": test_r2,
+            "train_mae": train_mae,
+            "test_mae": test_mae,
+            "train_rmse": train_rmse,
+            "test_rmse": test_rmse,
+        },
+        metrics_output_path,
+    )
 
     # Save model using utils
     save_model(model_pipeline, model_output_path)

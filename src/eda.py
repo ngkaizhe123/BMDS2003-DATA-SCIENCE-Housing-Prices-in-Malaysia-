@@ -200,8 +200,7 @@ def main():
 
     mapping = df.groupby("Area")["State"].nunique()
 
-    print("Maximum number of states per area:",
-          mapping.max())
+    print("Maximum number of states per area:", mapping.max())
 
     if mapping.max() == 1:
         print("Each Area belongs to exactly one State.")
@@ -212,11 +211,9 @@ def main():
 
     print(area_counts.describe())
 
-    print("\nAreas with fewer than 5 samples:",
-          (area_counts < 5).sum())
+    print("\nAreas with fewer than 5 samples:", (area_counts < 5).sum())
 
-    print("Percentage:",
-          (area_counts < 5).mean() * 100)
+    print("Percentage:", (area_counts < 5).mean() * 100)
 
     # --------------------------------------------------
     # Relationship Plot
