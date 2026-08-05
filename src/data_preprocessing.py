@@ -34,12 +34,21 @@ def standardize_text_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     return df_clean
 
 
+def remove_township(df: pd.DataFrame) -> pd.DataFrame:
+    df_clean = df.copy()
+    if "Township" in df_clean.columns:
+        df_clean = df_clean.drop(columns=["Township"])
+        print("[*] Township column removed.")
+    return df_clean
+
+
 def clean_state(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = df.copy()
     state_counts = df["State"].value_counts()
     rare_states = state_counts[state_counts < 2].index
     strat_col = df["State"].replace(rare_states, "Other_State")  # Handle rare states
     df_clean["State"] = strat_col
+    print("[*] Rare states replaced with 'Other_State'.")
     return df_clean
 
 
@@ -63,6 +72,8 @@ def bucket_rare_areas(df: pd.DataFrame, min_count: int = 5) -> pd.DataFrame:
         df["Area"] = df["Area"].where(
             ~df["Area"].isin(rare), other="Other_" + df["State"]
         )
+    print("[*] Rare areas bucketed into 'Other_State'.")
+    print(f"[*] Dataset shape after bucketing rare areas: {df.shape}")
     return df
 
 
@@ -88,6 +99,8 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
 
     text_cols_to_clean = ["Area", "State", "Tenure", "Type"]
 
+    df = remove_township(df)
+
     df = standardize_text_columns(df, text_cols_to_clean)
     print("Before cleaning:")
     print(df["Tenure"].value_counts())
@@ -103,11 +116,20 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
         df = df.drop(columns=["Median_PSF"])
 
     # 2. REMOVE OUTLIERS FIRST
+    print("Outliers removal: ")
+    print("Before removing outliers:", df.shape)
     df = remove_outliers_iqr(df, "Median_Price")
+    print("[*] Removed outliers based on Median_Price.")
     df = remove_outliers_iqr(df, "Transactions")
+    print("[*] Removed outliers based on Transactions.")
+    print("After removing outliers:", df.shape)
 
     # 3. CLEAN RARE CATEGORIES AFTER OUTLIERS ARE REMOVED
+    print("Before cleaning:")
+    print(df["State"].value_counts())
     df = clean_state(df)
+    print("\nAfter cleaning:")
+    print(df["State"].value_counts())
     df = bucket_rare_areas(df, min_count=5)
 
     # 4. ENCODE TYPES

@@ -192,6 +192,30 @@ def main():
         save_countplot(df, col)
 
     # --------------------------------------------------
+    # Area-State Relationship
+    # --------------------------------------------------
+    print("=" * 60)
+    print("AREA-STATE RELATIONSHIP")
+    print("=" * 60)
+
+    mapping = df.groupby("Area")["State"].nunique()
+
+    print("Maximum number of states per area:", mapping.max())
+
+    if mapping.max() == 1:
+        print("Each Area belongs to exactly one State.")
+    else:
+        print("Some Areas belong to multiple States.")
+
+    area_counts = df["Area"].value_counts()
+
+    print(area_counts.describe())
+
+    print("\nAreas with fewer than 5 samples:", (area_counts < 5).sum())
+
+    print("Percentage:", (area_counts < 5).mean() * 100)
+
+    # --------------------------------------------------
     # Relationship Plot
     # --------------------------------------------------
 
