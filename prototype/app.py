@@ -685,10 +685,14 @@ def main():
                     "test_mae",
                     "train_rmse",
                     "test_rmse",
+                    "train_mape",
+                    "test_mape",
                 ]
                 for col in required_cols:
                     if col not in metrics_df.columns:
                         metrics_df[col] = np.nan
+
+                metrics_df["gap_r2"] = metrics_df["train_r2"] - metrics_df["test_r2"]
 
                 st.markdown("### Metrics Comparison Table")
                 display_df = metrics_df.copy()
@@ -698,21 +702,47 @@ def main():
                 display_df["test_r2"] = display_df["test_r2"].map(
                     lambda x: f"{x:.4f}" if pd.notna(x) else "—"
                 )
+                display_df["gap_r2"] = display_df["gap_r2"].map(
+                    lambda x: f"{x:.4f}" if pd.notna(x) else "—"
+                )
+
                 for col in ["train_mae", "test_mae", "train_rmse", "test_rmse"]:
                     display_df[col] = display_df[col].map(
                         lambda x: f"RM {x:,.0f}" if pd.notna(x) else "—"
+                    )
+
+                for col in ["train_mape", "test_mape"]:
+                    display_df[col] = display_df[col].map(
+                        lambda x: f"{x * 100:.2f}%" if pd.notna(x) else "—"
                     )
 
                 display_df = display_df.rename(
                     columns={
                         "train_r2": "Train R²",
                         "test_r2": "Test R²",
+                        "gap_r2": "Gap Test R²",
                         "train_mae": "Train MAE",
                         "test_mae": "Test MAE",
                         "train_rmse": "Train RMSE",
                         "test_rmse": "Test RMSE",
+                        "train_mape": "Train MAPE",
+                        "test_mape": "Test MAPE",
                     }
                 )
+
+                display_cols = [
+                    "Train R²",
+                    "Test R²",
+                    "Gap Test R²",
+                    "Train MAPE",
+                    "Test MAPE",
+                    "Train MAE",
+                    "Test MAE",
+                    "Train RMSE",
+                    "Test RMSE",
+                ]
+                display_df = display_df[display_cols]
+
                 st.dataframe(display_df, use_container_width=True)
 
                 st.markdown("### R² Comparison (Train vs Test)")

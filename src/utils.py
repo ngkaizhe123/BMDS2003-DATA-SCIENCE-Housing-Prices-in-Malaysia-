@@ -113,7 +113,7 @@ def print_metrics(model_name, y_true, y_pred):
     print(f"Log R²: {log_r2:.4f}")
     print("-" * 45)
 
-    return mae, rmse, r2,mape
+    return mae, rmse, r2, mape
 
 
 def save_model(model, output_path):
