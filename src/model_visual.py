@@ -1,13 +1,16 @@
+import json
+from pathlib import Path
+import sys
+import joblib
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
-import sys
-from pathlib import Path
+import matplotlib.ticker as ticker
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 from src.data_preprocessing import run_preprocessing_pipeline
+from src.utils import load_raw_dataset, split_dataset
 
 
 def main():
@@ -23,7 +26,9 @@ def main():
     # Chart 1: Comprehensive Trends
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(16, 12))
     fig.suptitle(
-        "Comprehensive Malaysia Housing Market Analysis", fontsize=16, fontweight="bold"
+        "Comprehensive Malaysia Housing Market Analysis",
+        fontsize=16,
+        fontweight="bold",
     )
 
     state_price = (
@@ -33,7 +38,12 @@ def main():
         .head(10)
     )
     sns.barplot(
-        x=state_price.values, y=state_price.index, ax=axes[0, 0], palette="viridis"
+        x=state_price.values,
+        y=state_price.index,
+        ax=axes[0, 0],
+        hue=state_price.index,
+        palette="viridis",
+        legend=False,
     )
     axes[0, 0].set_title("Top 10 States by Median Price")
 
@@ -47,7 +57,14 @@ def main():
         .sort_values(ascending=False)
         .head(8)
     )
-    sns.barplot(x=type_vol.values, y=type_vol.index, ax=axes[0, 1], palette="magma")
+    sns.barplot(
+        x=type_vol.values,
+        y=type_vol.index,
+        ax=axes[0, 1],
+        hue=type_vol.index,
+        palette="magma",
+        legend=False,
+    )
     axes[0, 1].set_title("Most Traded Property Types")
 
     sns.histplot(
@@ -56,7 +73,13 @@ def main():
     axes[1, 0].set_title("Distribution of Property Prices")
 
     sns.boxplot(
-        data=df_visual, x="Tenure", y="Median_Price", ax=axes[1, 1], palette="Set2"
+        data=df_visual,
+        x="Tenure",
+        y="Median_Price",
+        ax=axes[1, 1],
+        hue="Tenure",
+        palette="Set2",
+        legend=False,
     )
     axes[1, 1].set_title("Price Comparison: Freehold vs Leasehold")
 
@@ -86,6 +109,174 @@ def main():
     plt.tight_layout()
     plt.savefig(output_dir / "boxplot_features.png", dpi=300)
     print("✅ Saved boxplot_features.png")
+
+    # MODEL PERFORMANCE COMPARISONS
+    metrics_path = project_root / "report_assets" / "metrics.json"
+    if metrics_path.exists():
+        print("Generating Model Comparison Charts...")
+        with open(metrics_path, "r") as f:
+            metrics_data = json.load(f)
+
+        df_metrics = pd.DataFrame(metrics_data).T
+
+        # Chart 8: R² Comparison Chart
+        plt.figure(figsize=(10, 6))
+        sns.barplot(
+            x=df_metrics.index,
+            y="test_r2",
+            data=df_metrics,
+            palette="Blues_d",
+            hue=df_metrics.index,
+            legend=False,
+        )
+        plt.title(
+            "Model Comparison - Test R² Score (Higher is Better)",
+            fontweight="bold",
+        )
+        plt.xlabel("Models")
+        plt.ylabel("Test R² Score")
+        plt.ylim(0, 1.05)
+        plt.xticks(rotation=15)
+        plt.tight_layout()
+        plt.savefig(output_dir / "model_comparison_r2.png", dpi=300)
+        plt.close()
+        print("✅ Saved model_comparison_r2.png")
+
+        # Error Metrics Comparison (RMSE and MAE)
+        if {"test_rmse", "test_mae"}.issubset(df_metrics.columns):
+            df_errors = (
+                df_metrics[["test_rmse", "test_mae"]]
+                .reset_index()
+                .melt(
+                    id_vars="index",
+                    var_name="Metric",
+                    value_name="Error (RM)",
+                )
+            )
+            df_errors["Metric"] = df_errors["Metric"].replace(
+                {"test_rmse": "RMSE", "test_mae": "MAE"}
+            )
+            plt.figure(figsize=(12, 6))
+            sns.barplot(
+                x="index",
+                y="Error (RM)",
+                hue="Metric",
+                data=df_errors,
+                palette="muted",
+            )
+            plt.title(
+                "Model Comparison - Test RMSE and MAE (Lower is Better)",
+                fontweight="bold",
+            )
+            plt.xlabel("Models")
+            plt.ylabel("Error Value (MYR)")
+            plt.xticks(rotation=15)
+            plt.tight_layout()
+            plt.savefig(output_dir / "model_comparison_errors.png", dpi=300)
+            plt.close()
+            print("✅ Saved model_comparison_errors.png")
+
+    # MODEL SELF-DIAGNOSTICS (TRAIN VS TEST CHARTS)
+    print(
+        "Generating individual model diagnostics (Actual vs Predicted & Residuals)..."
+    )
+    categorical_features = ["Area", "State", "Tenure"]
+    numerical_features = ["Transactions", "Log_Estimated_Size"]
+
+    # Retrieve both training and testing datasets
+    X_train, X_test, y_train, y_test = split_dataset(
+        df_visual, categorical_features, numerical_features, type_cols
+    )
+
+    prototype_dir = project_root / "prototype"
+    model_files = {
+        "Multiple Linear Regression": "linear_regression.pkl",
+        "Support Vector Regression": "svr_regression.pkl",
+        "Random Forest": "random_forest_regression.pkl",
+        "XGBoost": "xgboost_regression.pkl",
+    }
+
+    for model_name, filename in model_files.items():
+        model_path = prototype_dir / filename
+        if not model_path.exists():
+            continue
+
+        try:
+            model = joblib.load(model_path)
+            y_train_pred = model.predict(X_train)
+            y_test_pred = model.predict(X_test)
+        except Exception as e:
+            print(f"Skipping {model_name} due to load error: {e}")
+            continue
+
+        # 1. Actual vs Predicted Chart
+        fig, ax = plt.subplots(figsize=(8, 8))
+        sns.scatterplot(
+            x=y_train,
+            y=y_train_pred,
+            alpha=0.5,
+            color="dodgerblue",
+            label="Training Data",
+            ax=ax,
+        )
+        sns.scatterplot(
+            x=y_test,
+            y=y_test_pred,
+            alpha=0.6,
+            color="red",
+            label="Test Data",
+            ax=ax,
+        )
+
+        min_val = min(
+            y_train.min(), y_test.min(), y_train_pred.min(), y_test_pred.min()
+        )
+        max_val = max(
+            y_train.max(), y_test.max(), y_train_pred.max(), y_test_pred.max()
+        )
+        ax.plot(
+            [min_val, max_val],
+            [min_val, max_val],
+            "k--",
+            lw=2,
+            label="Ideal Fit Line",
+        )
+
+        ax.ticklabel_format(style='plain', axis='both')
+        ax.set_title(f"Actual vs Predicted ({model_name})", fontweight="bold")
+        ax.set_xlabel("Actual Prices (RM)")
+        ax.set_ylabel("Predicted Prices (RM)")
+        ax.legend(loc="upper left")
+        plt.tight_layout()
+        safe_name = model_name.lower().replace(" ", "_")
+        plt.savefig(output_dir / f"actual_vs_predicted_{safe_name}.png", dpi=300)
+        plt.close()
+
+        # 2. Residuals vs Predicted Chart
+        residuals_test = y_test - y_test_pred
+
+        fig, ax = plt.subplots(figsize=(9, 6))
+        sns.scatterplot(
+            x=y_test_pred,
+            y=residuals_test,
+            alpha=0.6,
+            color="crimson",
+            label="Test Data",
+            ax=ax,
+        )
+
+        ax.axhline(0, color="black", linestyle="--", lw=2, label="Zero Error Line")
+        ax.set_title(f"Residual Plot ({model_name})", fontweight="bold")
+        ax.set_xlabel("Predicted Prices (RM)")
+        ax.set_ylabel("Residuals (Actual - Predicted)(RM)")
+        ax.legend(loc="upper right")
+        plt.tight_layout()
+        plt.savefig(output_dir / f"residuals_vs_predicted_{safe_name}.png", dpi=300)
+        plt.close()
+
+    print(
+        "✅ Saved all updated Actual vs Predicted and Residual diagnostic charts for all models."
+    )
 
 
 if __name__ == "__main__":
