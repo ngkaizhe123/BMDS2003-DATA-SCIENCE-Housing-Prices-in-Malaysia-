@@ -242,7 +242,7 @@ def main():
             label="Ideal Fit Line",
         )
 
-        ax.ticklabel_format(style='plain', axis='both')
+        ax.ticklabel_format(style="plain", axis="both")
         ax.set_title(f"Actual vs Predicted ({model_name})", fontweight="bold")
         ax.set_xlabel("Actual Prices (RM)")
         ax.set_ylabel("Predicted Prices (RM)")
