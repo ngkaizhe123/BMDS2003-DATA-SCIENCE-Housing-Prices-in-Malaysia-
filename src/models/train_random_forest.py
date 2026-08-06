@@ -70,13 +70,15 @@ def main():
         inverse_func=np.expm1,
     )
 
-    # 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
+    # 3. Define hyperparameter distribution for tuning
     param_dist = {
-        "regressor__regressor__n_estimators": [400, 700, 600],
-        "regressor__regressor__max_depth": [10, 20, 30, None],
-        "regressor__regressor__min_samples_split": [2, 5, 10],
-        "regressor__regressor__min_samples_leaf": [1, 2],
-        "regressor__regressor__max_features": ["sqrt", "log2", 1, 0.3, 0.5],
+        "regressor__regressor__n_estimators": [600, 750, 900],
+        "regressor__regressor__max_depth": [15, 18, 20],
+        "regressor__regressor__min_samples_split": [5, 8, 12],
+        "regressor__regressor__min_samples_leaf": [2, 3, 5],
+        "regressor__regressor__max_features": [0.35, 0.45, 0.55, "sqrt"],
+        "regressor__regressor__max_samples": [0.75, 0.85, 0.90],
+        "regressor__regressor__ccp_alpha": [0.0001, 0.0005, 0.001, 0.002],
     }
 
     print("Implementing RandomizedSearchCV for parameter tuning...")
@@ -129,6 +131,7 @@ def main():
 
     print(f"Train R\u00b2  : {train_r2:.4f}")
     print(f"Test R\u00b2   : {test_r2:.4f}")
+    print(f"Final Gap : {train_r2 - test_r2:.4f}")
 
     # 4. Print regression metrics ($R^2$, MAE, RMSE)
     print_metrics("Random Forest", y_test, y_pred)
