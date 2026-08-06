@@ -106,7 +106,7 @@ def main():
     print_metrics("Linear Regression", y_test, y_pred)
     metrics_output_path = project_root / "report_assets" / "metrics.json"
     save_metrics(
-        "Linear Regression",
+        "Multiple Linear Regression",
         {
             "train_r2": train_r2,
             "test_r2": test_r2,
