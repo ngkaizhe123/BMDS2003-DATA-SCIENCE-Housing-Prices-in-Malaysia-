@@ -73,7 +73,9 @@ def show_image_if_exists(path: Path, caption: str = None):
     if path.exists():
         st.image(str(path), caption=caption, use_container_width=True)
     else:
-        st.caption(f"⚠️ Plot not found: `{path.name}`. Run `python src/eda.py` to generate it.")
+        st.caption(
+            f"⚠️ Plot not found: `{path.name}`. Run `python src/eda.py` to generate it."
+        )
 
 
 def _count_iqr_outliers(series: pd.Series) -> int:
@@ -891,7 +893,9 @@ def main():
                         pd.read_csv(desc_path, index_col=0), use_container_width=True
                     )
                 else:
-                    st.dataframe(raw_df.describe(include="all"), use_container_width=True)
+                    st.dataframe(
+                        raw_df.describe(include="all"), use_container_width=True
+                    )
 
             # ---------------- Target Variable ----------------
             with eda_tabs[1]:
@@ -918,7 +922,8 @@ def main():
                         )
                     with img_c2:
                         show_image_if_exists(
-                            eda_dir / "log_target_distribution.png", "Median Price (log1p)"
+                            eda_dir / "log_target_distribution.png",
+                            "Median Price (log1p)",
                         )
                 else:
                     st.warning("`Median_Price` column not found in raw data.")
@@ -942,7 +947,8 @@ def main():
                         img_c1, img_c2 = st.columns(2)
                         with img_c1:
                             show_image_if_exists(
-                                eda_dir / f"{col}_distribution.png", f"{col} Distribution"
+                                eda_dir / f"{col}_distribution.png",
+                                f"{col} Distribution",
                             )
                         with img_c2:
                             show_image_if_exists(
@@ -957,7 +963,9 @@ def main():
                     "Top 15 most frequent categories are shown for readability; rarer "
                     "categories are omitted from the plot but still counted below."
                 )
-                categorical_cols = raw_df.select_dtypes(include="object").columns.tolist()
+                categorical_cols = raw_df.select_dtypes(
+                    include="object"
+                ).columns.tolist()
 
                 for col in categorical_cols:
                     n_unique = raw_df[col].nunique()
@@ -972,7 +980,8 @@ def main():
                         )
 
                     show_image_if_exists(
-                        eda_dir / f"{col}_countplot_top15.png", f"{col} — Top 15 Categories"
+                        eda_dir / f"{col}_countplot_top15.png",
+                        f"{col} — Top 15 Categories",
                     )
                     st.markdown("---")
 
