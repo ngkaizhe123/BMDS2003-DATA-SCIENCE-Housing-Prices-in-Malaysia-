@@ -5,7 +5,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
-from sklearn.compose import TransformedTargetRegressor
+from sklearn.compose import TransformedTargetRegressor, ColumnTransformer
+from sklearn.preprocessing import TargetEncoder, StandardScaler
 
 # Point python path cleanly to src
 current_dir = Path(__file__).resolve().parent
@@ -63,29 +64,12 @@ def main():
 
     # 3. Define hyperparameter distribution for tuning
     param_dist = {
-        # --- THE FOUNDATION (Pushing for High R²) ---
-        # Keep tree counts high for maximum predictive stability
         "regressor__regressor__n_estimators": [600, 750, 900],
-
-        # Allow trees to grow moderately deep to capture complex price patterns
-        "regressor__regressor__max_depth": [15, 20, 25],
-
-        # Stricter than default, but low enough to maintain high accuracy
+        "regressor__regressor__max_depth": [15, 18, 20],
         "regressor__regressor__min_samples_split": [5, 8, 12],
         "regressor__regressor__min_samples_leaf": [2, 3, 5],
-
-        # Limit feature visibility to force trees to find diverse patterns
         "regressor__regressor__max_features": [0.35, 0.45, 0.55, "sqrt"],
-
-        # --- [TECHNIQUE A] ROW SUBSAMPLING (Shrinking the Gap) ---
-        # Force each tree to only see 75% to 90% of the dataset.
-        # This keeps R² high while mathematically lowering the variance/overfitting.
         "regressor__regressor__max_samples": [0.75, 0.85, 0.90],
-
-        # --- [TECHNIQUE B] COST-COMPLEXITY PRUNING (Shrinking the Gap) ---
-        # Because your target is Log-Transformed, MSE is tiny.
-        # These tiny alpha values will act like a precision scalpel,
-        # cutting off ONLY the deeply overfitted "noise" leaves.
         "regressor__regressor__ccp_alpha": [0.0001, 0.0005, 0.001, 0.002],
     }
 
