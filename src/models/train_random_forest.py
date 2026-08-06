@@ -5,8 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
-from sklearn.compose import TransformedTargetRegressor, ColumnTransformer
-from sklearn.preprocessing import StandardScaler, TargetEncoder, OneHotEncoder
+from sklearn.compose import TransformedTargetRegressor
 
 # Point python path cleanly to src
 current_dir = Path(__file__).resolve().parent
@@ -62,19 +61,38 @@ def main():
         inverse_func=np.expm1,
     )
 
-    # 3. Define hyperparameter distribution for tuning (CLO1 & CLO3 Rubric Requirement)
+    # 3. Define hyperparameter distribution for tuning
     param_dist = {
-        "regressor__regressor__n_estimators": [400, 700, 600],
-        "regressor__regressor__max_depth": [10, 20, 30, None],
-        "regressor__regressor__min_samples_split": [2, 5, 10],
-        "regressor__regressor__min_samples_leaf": [1, 2],
-        "regressor__regressor__max_features": ["sqrt", "log2", 1, 0.3, 0.5],
+        # --- THE FOUNDATION (Pushing for High R²) ---
+        # Keep tree counts high for maximum predictive stability
+        "regressor__regressor__n_estimators": [600, 750, 900],
+
+        # Allow trees to grow moderately deep to capture complex price patterns
+        "regressor__regressor__max_depth": [15, 20, 25],
+
+        # Stricter than default, but low enough to maintain high accuracy
+        "regressor__regressor__min_samples_split": [5, 8, 12],
+        "regressor__regressor__min_samples_leaf": [2, 3, 5],
+
+        # Limit feature visibility to force trees to find diverse patterns
+        "regressor__regressor__max_features": [0.35, 0.45, 0.55, "sqrt"],
+
+        # --- [TECHNIQUE A] ROW SUBSAMPLING (Shrinking the Gap) ---
+        # Force each tree to only see 75% to 90% of the dataset.
+        # This keeps R² high while mathematically lowering the variance/overfitting.
+        "regressor__regressor__max_samples": [0.75, 0.85, 0.90],
+
+        # --- [TECHNIQUE B] COST-COMPLEXITY PRUNING (Shrinking the Gap) ---
+        # Because your target is Log-Transformed, MSE is tiny.
+        # These tiny alpha values will act like a precision scalpel,
+        # cutting off ONLY the deeply overfitted "noise" leaves.
+        "regressor__regressor__ccp_alpha": [0.0001, 0.0005, 0.001, 0.002],
     }
 
     print("Implementing RandomizedSearchCV for parameter tuning...")
     search = RandomizedSearchCV(
         estimator=model_pipeline,
-        param_distributions = param_dist,
+        param_distributions=param_dist,
         n_iter=30,
         cv=5,
         scoring="r2",
@@ -115,6 +133,7 @@ def main():
 
     print(f"Train R\u00b2  : {train_r2:.4f}")
     print(f"Test R\u00b2   : {test_r2:.4f}")
+    print(f"Final Gap : {train_r2 - test_r2:.4f}")
 
     # 4. Print regression metrics ($R^2$, MAE, RMSE)
     print_metrics("Random Forest", y_test, y_pred)

@@ -114,7 +114,7 @@ def main():
     early_stop = EarlyStoppingCallback(early_stopping_rounds=20)
 
     study.optimize(
-        objective, n_trials=200, show_progress_bar=True, callbacks=[early_stop]
+        objective, n_trials=150, show_progress_bar=True, callbacks=[early_stop]
     )
 
     print(f"\nBest parameters found: {study.best_params}")
@@ -170,6 +170,7 @@ def main():
 
     print(f"Train R\u00b2  : {train_r2:.4f}")
     print(f"Test R\u00b2   : {test_r2:.4f}")
+    print(f"Final Gap : {train_r2 - test_r2:.4f}")
 
     # 5. Print regression metrics (R², MAE, RMSE)
     print_metrics("Random Forest", y_test, y_pred)
