@@ -5,7 +5,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
-from sklearn.compose import TransformedTargetRegressor
+from sklearn.compose import TransformedTargetRegressor, ColumnTransformer
+from sklearn.preprocessing import StandardScaler, TargetEncoder, OneHotEncoder
 
 # Point python path cleanly to src
 current_dir = Path(__file__).resolve().parent
@@ -22,7 +23,6 @@ from src.utils import (
     save_model,
     save_metrics,
 )
-
 
 def main():
     model_output_path = project_root / "prototype" / "random_forest_regression.pkl"
@@ -74,7 +74,7 @@ def main():
     print("Implementing RandomizedSearchCV for parameter tuning...")
     search = RandomizedSearchCV(
         estimator=model_pipeline,
-        param_distributions=param_dist,
+        param_distributions = param_dist,
         n_iter=30,
         cv=5,
         scoring="r2",

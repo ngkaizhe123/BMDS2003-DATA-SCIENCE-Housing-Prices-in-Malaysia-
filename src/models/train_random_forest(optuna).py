@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import TransformedTargetRegressor
 import optuna
 from optuna.samplers import TPESampler
+from sklearn.preprocessing import StandardScaler, TargetEncoder
 
 # Point python path cleanly to src
 current_dir = Path(__file__).resolve().parent
