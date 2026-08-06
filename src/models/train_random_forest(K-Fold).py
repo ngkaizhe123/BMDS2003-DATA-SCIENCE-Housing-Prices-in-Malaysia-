@@ -18,21 +18,33 @@ from src.data_preprocessing import run_preprocessing_pipeline
 from src.utils import (
     load_raw_dataset,
     split_dataset,
-    build_preprocessor,
     print_metrics,
     save_model,
     save_metrics,
 )
 
+def build_preprocessor(numerical_features, categorical_features, type_features):
+    numeric_transformer = Pipeline([("scaler", StandardScaler())])
 
+    # This replaces One-Hot Encoding! It converts "Area" into a single, smooth numerical value.
+    categorical_transformer = Pipeline(
+        [("target_enc", TargetEncoder(smooth="auto", cv=5))]
+    )
+
+    return ColumnTransformer(
+        transformers=[
+            ("num", numeric_transformer, numerical_features),
+            ("cat", categorical_transformer, categorical_features),
+            ("type", "passthrough", type_features),
+        ]
+    )
 
 
 def main():
     model_output_path = project_root / "prototype" / "random_forest_regression.pkl"
 
     categorical_features = ["Area", "State", "Tenure"]
-    # Removed Log_Estimated_Size to prevent KeyError, relying safely on Estimated_Size
-    numerical_features = ["Transactions", "Estimated_Size"]
+    numerical_features = ["Transactions", "Log_Estimated_Size"]
 
     # 1. Load raw dataset and run preprocessing pipeline ONCE
     df = load_raw_dataset(project_root)
@@ -54,11 +66,11 @@ def main():
 
     # 2. Hardcode the Optimal Parameters
     best_params = {
-        "n_estimators": 750,
-        "max_depth": 41,
-        "min_samples_split": 3,
-        "min_samples_leaf": 1,
-        "max_features": 0.4,
+        "n_estimators": 850,
+        "max_depth": 20,
+        "min_samples_split": 10,
+        "min_samples_leaf": 2,
+        "max_features": 0.60,
     }
 
     print("\nImplementing Strategy 3: 5-Fold Out-of-Fold Averaging...")
@@ -67,18 +79,15 @@ def main():
 
     # Arrays to store the blended predictions
     test_predictions_sum = np.zeros(len(X_test))
-    oof_train_predictions = np.zeros(len(X_train))
+    train_predictions_sum = np.zeros(len(X_train))
 
-    # To save the best overall model for Streamlit
     models_list = []
 
     # 3. K-Fold Training Loop
     for fold, (train_idx, val_idx) in enumerate(kf.split(X_train, y_train)):
         print(f"   -> Training Fold {fold + 1}/{k}...")
 
-        # Split training data into fold-train and fold-validation
         X_fold_train, y_fold_train = X_train.iloc[train_idx], y_train.iloc[train_idx]
-        X_fold_val, y_fold_val = X_train.iloc[val_idx], y_train.iloc[val_idx]
 
         # Build fresh model for this specific fold
         fold_pipeline = TransformedTargetRegressor(
@@ -87,7 +96,7 @@ def main():
                     ("preprocessor", preprocessor),
                     ("regressor", RandomForestRegressor(
                         random_state=42,
-                        n_jobs=-1,  # Safe to use -1 here inside the fold
+                        n_jobs=-1,
                         **best_params
                     )),
                 ]
@@ -96,17 +105,15 @@ def main():
             inverse_func=np.expm1,
         )
 
-        # Fit the fold model
         fold_pipeline.fit(X_fold_train, y_fold_train)
         models_list.append(fold_pipeline)
 
-        # Generate Out-Of-Fold predictions for the training set evaluation
-        oof_train_predictions[val_idx] = fold_pipeline.predict(X_fold_val)
-
-        # Predict on the unseen global Test Set and accumulate the votes
+        # Let this fold model vote on the ENTIRE training set and Test set
+        train_predictions_sum += fold_pipeline.predict(X_train)
         test_predictions_sum += fold_pipeline.predict(X_test)
 
-    # 4. Average the final test predictions across all 5 models
+    # 4. Average the final predictions across all 5 models
+    final_train_predictions = train_predictions_sum / k
     final_test_predictions = test_predictions_sum / k
 
     # =============================
@@ -114,13 +121,13 @@ def main():
     # =============================
     print("\nEvaluating K-Fold Averaged Model...")
 
-    train_r2 = r2_score(y_train, oof_train_predictions)
+    train_r2 = r2_score(y_train, final_train_predictions)
     test_r2 = r2_score(y_test, final_test_predictions)
 
-    train_mae = mean_absolute_error(y_train, oof_train_predictions)
+    train_mae = mean_absolute_error(y_train, final_train_predictions)
     test_mae = mean_absolute_error(y_test, final_test_predictions)
 
-    train_rmse = np.sqrt(mean_squared_error(y_train, oof_train_predictions))
+    train_rmse = np.sqrt(mean_squared_error(y_train, final_train_predictions))
     test_rmse = np.sqrt(mean_squared_error(y_test, final_test_predictions))
 
     print("\nTrain vs Test Performance (5-Fold Blended)")
@@ -151,9 +158,6 @@ def main():
     )
 
     print("-" * 30)
-    # We save Fold 1's model as the prototype representative for the Streamlit app
-    # (In high-end production, you would export all 5 and average them live,
-    # but saving one is standard for a deployment prototype assignment).
     save_model(models_list[0], model_output_path)
 
 
