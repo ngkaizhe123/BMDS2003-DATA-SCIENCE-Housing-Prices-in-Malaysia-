@@ -42,19 +42,15 @@ def load_models():
 
 
 @st.cache_data
-def load_area_frequencies():
-    """Area counts from the cleaned training data, used to warn users when a
-    typed-in Area is rare or unseen in training."""
+def load_state_area_lookup():
+    """Loads the hierarchical State -> Area -> Features lookup table."""
     project_root = Path(__file__).resolve().parent.parent
-    data_path = (
-        project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
-    )
-    if not data_path.exists():
-        return None
-    df = pd.read_csv(data_path)
-    if "Area" not in df.columns:
-        return None
-    return df["Area"].value_counts()
+    lookup_path = project_root / "data" / "processed" / "state_area_lookup_table.json"
+
+    if lookup_path.exists():
+        with open(lookup_path, "r") as f:
+            return json.load(f)
+    return {}
 
 
 @st.cache_data
@@ -99,7 +95,7 @@ def _count_iqr_outliers(series: pd.Series) -> int:
 def _unwrap_column_transformer(model):
     """Return the fitted ColumnTransformer inside a model pipeline, if any."""
     candidate = model
-    if hasattr(candidate, "regressor_"):  # fitted TransformedTargetRegressor
+    if hasattr(candidate, "regressor_"):
         candidate = candidate.regressor_
     elif hasattr(candidate, "regressor"):
         candidate = candidate.regressor
@@ -166,7 +162,7 @@ def resolve_area_category(model, area_name, state_name):
     """
     known_areas = _get_onehot_categories(model, "Area")
     if known_areas is None:
-        return area_name, False  # can't verify — pass through as-is
+        return area_name, False
 
     if area_name in known_areas:
         return area_name, False
@@ -175,32 +171,35 @@ def resolve_area_category(model, area_name, state_name):
     if fallback in known_areas:
         return fallback, True
 
-    return area_name, True  # still unresolved, encoder will zero it out
+    return area_name, True
 
 
 # ---------------------------------------------------------
 # Feature preparation
 # ---------------------------------------------------------
 
-
-def prepare_input_features(raw_input: dict, expected_columns: list):
-    """
-    Build a single-row DataFrame matching exactly what the trained
-    preprocessor expects (pulled live from the model via `feature_names_in_`),
-    so this never drifts out of sync with the training script again.
-
-    Returns (df, notes) — notes describes any columns that had to be
-    auto-derived or defaulted.
-    """
+def prepare_input_features(raw_input: dict, expected_columns: list, state_area_lookup: dict):
     notes = []
     row = {}
 
-    # Direct raw fields (Area, State, Tenure, Transactions, ...)
     for col in expected_columns:
         if col in raw_input:
             row[col] = raw_input[col]
 
-    # Type_* multi-hot columns, derived from the raw "Type" selection
+    selected_state = raw_input.get("State", "")
+    selected_area = raw_input.get("Area", "")
+
+    area_data = state_area_lookup.get(selected_state, {}).get(selected_area, {})
+
+    if "Transactions" in expected_columns:
+        if "Transactions" in raw_input:
+            row["Transactions"] = raw_input["Transactions"]
+        else:
+            row["Transactions"] = area_data.get("Transactions", 16.0)
+
+    if "Area_Transaction_Density" in expected_columns:
+        row["Area_Transaction_Density"] = area_data.get("Area_Transaction_Density", 0.005)
+
     type_cols = [c for c in expected_columns if c.startswith("Type_")]
     if type_cols and "Type" in raw_input:
         selected_types = [t.strip() for t in str(raw_input["Type"]).split(",")]
@@ -227,14 +226,11 @@ def prepare_input_features(raw_input: dict, expected_columns: list):
     return df, notes
 
 
-def predict_price(model, raw_input: dict):
-    """Predict price and return (prediction, notes) where notes are
-    user-facing caveats about the prediction's reliability."""
+def predict_price(model, raw_input: dict, state_area_lookup: dict):
     expected_columns = get_expected_columns(model)
     if expected_columns is None:
         raise ValueError(
-            "Unable to read expected feature columns from the model (missing feature_names_in_)."
-            "Please confirm the model is trained and saved using a more recent version of the pipeline."
+            "Unable to read expected feature columns from the model."
         )
 
     notes = []
@@ -247,11 +243,11 @@ def predict_price(model, raw_input: dict):
         if remapped:
             notes.append(
                 f"'{working_input['Area']}' not in training data's known areas, "
-                f"reverted to using '{resolved_area}' (state-level estimate), prediction accuracy may be compromised."
+                f"reverted to using '{resolved_area}' (state-level estimate)."
             )
         working_input["Area"] = resolved_area
 
-    df, fill_notes = prepare_input_features(working_input, expected_columns)
+    df, fill_notes = prepare_input_features(working_input, expected_columns, state_area_lookup)
     notes.extend(fill_notes)
 
     pred = float(model.predict(df)[0])
@@ -274,8 +270,7 @@ def area_reliability_note(area_freq, area_name, threshold=5):
 # SHAP explanation (tree models only: XGBoost, Random Forest)
 # ---------------------------------------------------------
 
-
-def explain_tree_prediction(model, raw_input: dict):
+def explain_tree_prediction(model, raw_input: dict, state_area_lookup: dict):
     """Best-effort SHAP waterfall for tree-based models. Returns a matplotlib
     figure, or None if unavailable (missing shap, or non-tree model)."""
     try:
@@ -302,7 +297,7 @@ def explain_tree_prediction(model, raw_input: dict):
         )
         working_input["Area"] = resolved_area
 
-    df, _ = prepare_input_features(working_input, expected_columns)
+    df, _ = prepare_input_features(working_input, expected_columns, state_area_lookup)
 
     try:
         X_transformed = ct.transform(df)
@@ -381,7 +376,19 @@ def plot_market_comparison(state, prop_type, predicted_price, title="Market Benc
 
 
 def render_input_form(form_key):
-    """Renders the common property feature input form."""
+    # Load the hierarchical JSON (now containing ALL raw areas)
+    state_area_lookup = load_state_area_lookup()
+
+    # Get all states, sorted
+    available_states = sorted(list(state_area_lookup.keys()))
+    if not available_states:
+        available_states = [
+            "Selangor",
+            "Kuala Lumpur",
+            "Johor",
+            "Penang"
+        ]
+
     st.info(
         "💡 **Tip:** Use a preset below to auto-fill the form, or enter your own custom details."
     )
@@ -408,7 +415,7 @@ def render_input_form(form_key):
         "",
         "Freehold",
         "Terrace House",
-        10,
+        16,
         1200,
     )
 
@@ -461,95 +468,99 @@ def render_input_form(form_key):
             750,
         )
 
+    st.subheader("Property Features")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        state_idx = available_states.index(default_state) if default_state in available_states else 0
+        state = st.selectbox("State", options=available_states, index=state_idx, key=f"state_{form_key}")
+
+        areas_in_state = sorted(list(state_area_lookup.get(state, {}).keys()))
+        if not areas_in_state:
+            areas_in_state = ["Insufficient historical data available"]
+
+        area_idx = areas_in_state.index(default_area) if default_area in areas_in_state else 0
+        area = st.selectbox(
+            "Area / Township",
+            options=areas_in_state,
+            index=area_idx,
+            key=f"area_{form_key}",
+            help="Select the specific town or neighborhood. If it says 'Insufficient data', try a different state."
+        )
+
+        tenure_options = ["Freehold", "Leasehold", "Freehold and Leasehold"]
+        tenure_idx = tenure_options.index(default_tenure) if default_tenure in tenure_options else 0
+        tenure = st.selectbox(
+            "Tenure",
+            options=tenure_options,
+            index=tenure_idx,
+            key=f"tenure_{form_key}",
+            help="Freehold = Ownership of land. Leasehold = Leased for a set period (e.g., 99 years)."
+        )
+
+    with col2:
+        type_options = [
+            "Terrace House",
+            "Condominium",
+            "Apartment",
+            "Semi D",
+            "Bungalow",
+            "Service Residence",
+            "Flat",
+            "Cluster House",
+            "Town House",
+        ]
+        type_idx = type_options.index(default_type) if default_type in type_options else 0
+        prop_type = st.selectbox(
+            "Property Type",
+            options=type_options,
+            index=type_idx,
+            key=f"type_{form_key}",
+            help="The architectural style or classification of the property."
+        )
+
+        estimated_size = st.number_input(
+            "Estimated Built-up Size (sqft)",
+            min_value=200,
+            max_value=20000,
+            value=default_size,
+            step=50,
+            key=f"size_{form_key}",
+            help="A manual estimate of the property's floor space in square feet."
+        )
+
+        is_manual = (preset_choice == "Custom Input (Manual)")
+        use_default_tx = st.checkbox(
+            "Auto-fill Transactions based on Area",
+            value=is_manual,
+            key=f"chk_tx_{form_key}",
+            help="Uncheck this to manually input a specific number of historical transactions."
+        )
+
+        if not use_default_tx:
+            manual_tx = st.number_input(
+                "Number of Transactions",
+                min_value=1, max_value=5000, value=default_tx, key=f"man_tx_{form_key}"
+            )
+        else:
+            manual_tx = None
+
+    submitted = st.button("Predict Price", use_container_width=True, key=f"btn_{form_key}")
+
     user_features = None
-    with st.form(form_key):
-        st.subheader("Property Features")
-        col1, col2 = st.columns(2)
+    if submitted:
+        user_features = {
+            "Area": area,
+            "State": state,
+            "Tenure": tenure,
+            "Type": prop_type,
+            "Estimated_Size": estimated_size,
+        }
 
-        with col1:
-            state_options = [
-                "Kuala Lumpur",
-                "Selangor",
-                "Johor",
-                "Penang",
-                "Perak",
-                "Negeri Sembilan",
-                "Melaka",
-                "Kedah",
-                "Pahang",
-                "Terengganu",
-                "Kelantan",
-                "Perlis",
-                "Sabah",
-                "Sarawak",
-            ]
-            state = st.selectbox(
-                "State", options=state_options, index=state_options.index(default_state)
-            )
-            area = st.text_input(
-                "Area / Township",
-                value=default_area,
-                placeholder="e.g., Cheras, Skudai",
-            )
-            tenure = st.selectbox(
-                "Tenure",
-                options=["Freehold", "Leasehold", "Freehold and Leasehold"],
-                index=(
-                    0
-                    if default_tenure == "Freehold"
-                    else (1 if default_tenure == "Leasehold" else 2)
-                ),
-            )
+        if manual_tx is not None:
+            user_features["Transactions"] = manual_tx
 
-        with col2:
-            type_options = [
-                "Terrace House",
-                "Condominium",
-                "Apartment",
-                "Semi D",
-                "Bungalow",
-                "Service Residence",
-                "Flat",
-                "Cluster House",
-                "Town House",
-            ]
-            prop_type = st.selectbox(
-                "Property Type",
-                options=type_options,
-                index=type_options.index(default_type),
-            )
-            transactions = st.number_input(
-                "Number of Transactions", min_value=1, value=default_tx
-            )
-            estimated_size = st.number_input(
-                "Estimated Built-up Size (sqft)",
-                min_value=200,
-                max_value=20000,
-                value=default_size,
-                step=50,
-                help="Estimated built-up size of the property (square feet). This is a manual estimate, not an exact measurement.",
-            )
-            st.caption(
-                "⚠️ This value is a manual estimate, and the model was trained using area derived from prices. "
-                "There may be differences between the manual estimate and the training distribution, and the prediction should be taken as a reference only. "
-            )
-
-        submitted = st.form_submit_button("Predict Price", use_container_width=True)
-
-        if submitted:
-            if not area.strip():
-                st.warning("Please enter an Area or Township name before submitting.")
-            else:
-                user_features = {
-                    "Area": area.strip().title(),
-                    "State": state,
-                    "Tenure": tenure,
-                    "Type": prop_type,
-                    "Transactions": transactions,
-                    "Estimated_Size": estimated_size,
-                }
-
-    return user_features
+    return user_features, state_area_lookup
 
 
 # =========================================================
@@ -561,7 +572,10 @@ def main():
     st.title("🏠 Malaysia Housing Price Predictor")
 
     models = load_models()
-    area_freq = load_area_frequencies()
+
+    # Load raw data to generate the area frequencies for the warning note
+    raw_df = load_raw_data()
+    area_freq = raw_df["Area"].value_counts().to_dict() if raw_df is not None else {}
 
     if not models:
         st.error(
@@ -585,11 +599,11 @@ def main():
         selected_model_name = st.selectbox("Select Model to Use:", list(models.keys()))
         selected_model = models[selected_model_name]
 
-        user_features = render_input_form("single_prediction_form")
+        user_features, state_area_lookup = render_input_form("single_prediction_form")
 
         if user_features:
             try:
-                pred, notes = predict_price(selected_model, user_features)
+                pred, notes = predict_price(selected_model, user_features, state_area_lookup)
 
                 st.success("Analysis Complete!")
                 st.metric(
@@ -597,7 +611,8 @@ def main():
                     value=f"RM {pred:,.2f}",
                 )
 
-                area_note = area_reliability_note(area_freq, user_features["Area"])
+                # Add the reliability note if the area has less than 5 samples
+                area_note = area_reliability_note(area_freq, user_features["Area"], threshold=5)
                 if area_note:
                     notes.append(area_note)
 
@@ -612,7 +627,7 @@ def main():
                     title=f"Market Benchmark ({selected_model_name})",
                 )
 
-                shap_fig = explain_tree_prediction(selected_model, user_features)
+                shap_fig = explain_tree_prediction(selected_model, user_features, state_area_lookup)
                 if shap_fig is not None:
                     with st.expander("🔍 Why? (SHAP Explanation)"):
                         st.caption(
@@ -635,7 +650,7 @@ def main():
                 "You need at least 2 models trained to compare. Currently only one model is loaded."
             )
 
-        comp_features = render_input_form("comparison_form")
+        comp_features, comp_state_area_lookup = render_input_form("comparison_form")
 
         if comp_features:
             st.markdown("### Prediction Results")
@@ -645,7 +660,7 @@ def main():
             all_notes = {}
             for idx, (m_name, m_obj) in enumerate(models.items()):
                 try:
-                    pred, notes = predict_price(m_obj, comp_features)
+                    pred, notes = predict_price(m_obj, comp_features, comp_state_area_lookup)
                     predictions[m_name] = pred
                     all_notes[m_name] = notes
                     cols[idx].metric(label=m_name, value=f"RM {pred:,.2f}")
@@ -673,13 +688,20 @@ def main():
                     plt.FuncFormatter(lambda x, p: format(int(x), ","))
                 )
 
+                # FIX 1: Properly pass the wrapped_labels into set_xticklabels
+                wrapped_labels = [label.replace(" ", "\n") for label in predictions.keys()]
+                ax.set_xticklabels(wrapped_labels)
+
+                max_pred = max(predictions.values())
+                ax.set_ylim(0, max_pred * 1.25)
+
                 for p in ax.patches:
                     ax.annotate(
                         f"RM {p.get_height():,.0f}",
                         (p.get_x() + p.get_width() / 2.0, p.get_height()),
                         ha="center",
                         va="bottom",
-                        xytext=(0, 5),
+                        xytext=(0, 6),
                         textcoords="offset points",
                     )
 
@@ -801,7 +823,8 @@ def main():
                     color="#00b894",
                 )
                 ax.set_xticks(x)
-                ax.set_xticklabels(metrics_df.index, rotation=15)
+                wrapped_metrics_labels = [label.replace(" ", "\n") for label in metrics_df.index]
+                ax.set_xticklabels(wrapped_metrics_labels)
                 ax.set_ylabel("R² Score")
                 ax.set_title("Train vs Test R² by Model", fontweight="bold")
                 ax.axhline(0, color="gray", linewidth=0.8)
@@ -827,6 +850,12 @@ def main():
                 ax2.yaxis.set_major_formatter(
                     plt.FuncFormatter(lambda x, p: format(int(x), ","))
                 )
+
+                # FIX 2: Wrapped Labels and higher ceiling for Test MAE Chart
+                ax2.set_xticklabels(wrapped_metrics_labels)
+                max_mae = metrics_df["test_mae"].max()
+                ax2.set_ylim(0, max_mae * 1.2)
+
                 for p in ax2.patches:
                     ax2.annotate(
                         f"RM {p.get_height():,.0f}",
