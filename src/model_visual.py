@@ -200,7 +200,7 @@ def main():
                     textcoords="offset points",
                 )
             ax.tick_params(axis="x", rotation=15)
-            ax.set_ylim(0, df_metrics["test_mae"].max() * 1.15) 
+            ax.set_ylim(0, df_metrics["test_mae"].max() * 1.15)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_mae.png", dpi=300)
             plt.close()
@@ -282,7 +282,11 @@ def main():
         "Generating individual model diagnostics (Actual vs Predicted & Residuals)..."
     )
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Log_Estimated_Size", "Area_Transaction_Density"]
+    numerical_features = [
+        "Transactions",
+        "Log_Estimated_Size",
+        "Area_Transaction_Density",
+    ]
 
     # Retrieve both training and testing datasets
     X_train, X_test, y_train, y_test = split_dataset(
