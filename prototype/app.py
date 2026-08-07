@@ -693,6 +693,7 @@ def main():
         current_path = Path(__file__).resolve().parent
         project_root = current_path.parent
         metrics_path = project_root / "report_assets" / "metrics.json"
+        plots_dir = project_root / "report_assets" / "plots"
 
         if not metrics_path.exists():
             st.info(
@@ -780,63 +781,49 @@ def main():
                 st.dataframe(display_df, use_container_width=True)
 
                 st.markdown("### R² Comparison (Train vs Test)")
-                st.caption(
-                    "The greater the difference between Train and Test, the more likely the model is overfitting."
+                show_image_if_exists(
+                    plots_dir / "model_comparison_r2.png",
+                    "Train vs Test R² Comparison"
                 )
-                fig, ax = plt.subplots(figsize=(8, 5))
-                x = np.arange(len(metrics_df))
-                width = 0.35
-                ax.bar(
-                    x - width / 2,
-                    metrics_df["train_r2"],
-                    width,
-                    label="Train R²",
-                    color="#74b9ff",
-                )
-                ax.bar(
-                    x + width / 2,
-                    metrics_df["test_r2"],
-                    width,
-                    label="Test R²",
-                    color="#00b894",
-                )
-                ax.set_xticks(x)
-                ax.set_xticklabels(metrics_df.index, rotation=15)
-                ax.set_ylabel("R² Score")
-                ax.set_title("Train vs Test R² by Model", fontweight="bold")
-                ax.axhline(0, color="gray", linewidth=0.8)
-                ax.legend()
-                st.pyplot(fig)
 
-                st.markdown("### Test MAE Comparison")
-                st.caption(
-                    "Lower values represent smaller average prediction errors on the test set."
+                st.markdown("### Test Error Comparison")
+                show_image_if_exists(
+                    plots_dir / "model_comparison_errors.png",
+                    "Test MAE & RMSE Comparison"
                 )
-                fig2, ax2 = plt.subplots(figsize=(8, 5))
-                sns.barplot(
-                    x=metrics_df.index,
-                    y=metrics_df["test_mae"],
-                    ax=ax2,
-                    hue=metrics_df.index,
-                    palette="Set2",
-                    legend=False,
-                )
-                ax2.set_ylabel("Test MAE (RM)")
-                ax2.set_xlabel("")
-                ax2.set_title("Test MAE by Model (lower is better)", fontweight="bold")
-                ax2.yaxis.set_major_formatter(
-                    plt.FuncFormatter(lambda x, p: format(int(x), ","))
-                )
-                for p in ax2.patches:
-                    ax2.annotate(
-                        f"RM {p.get_height():,.0f}",
-                        (p.get_x() + p.get_width() / 2.0, p.get_height()),
-                        ha="center",
-                        va="bottom",
-                        xytext=(0, 5),
-                        textcoords="offset points",
-                    )
-                st.pyplot(fig2)
+
+                st.markdown("### Actual vs Predicted Plots")
+                actual_vs_pred_files = sorted(list(plots_dir.glob("actual_vs_predicted_*.png")))
+                if actual_vs_pred_files:
+                    for plot_file in actual_vs_pred_files:
+                        model_title = plot_file.stem.replace("actual_vs_predicted_", "").replace("_", " ").title()
+                        st.markdown(f"#### Actual vs Predicted ({model_title})")
+                        show_image_if_exists(plot_file, f"Actual vs Predicted - {model_title}")
+                else:
+                    st.caption("No Actual vs Predicted plots found.")
+
+                st.markdown("### Residuals vs Predicted Plots")
+                residuals_files = sorted(list(plots_dir.glob("residuals_vs_predicted_*.png")))
+                if residuals_files:
+                    for plot_file in residuals_files:
+                        model_title = plot_file.stem.replace("residuals_vs_predicted_", "").replace("_", " ").title()
+                        st.markdown(f"#### Residuals vs Predicted ({model_title})")
+                        show_image_if_exists(plot_file, f"Residuals vs Predicted - {model_title}")
+                else:
+                    st.caption("No Residuals vs Predicted plots found.")
+
+                st.markdown("### Other Model Assessment Plots")
+                other_plots = [
+                    f for f in sorted(list(plots_dir.glob("*.png")))
+                    if not f.name.startswith("actual_vs_predicted_")
+                    and not f.name.startswith("residuals_vs_predicted_")
+                    and f.name not in ["model_comparison_r2.png", "model_comparison_errors.png"]
+                ]
+                if other_plots:
+                    for plot_file in other_plots:
+                        title = plot_file.stem.replace("_", " ").title()
+                        st.markdown(f"#### {title}")
+                        show_image_if_exists(plot_file, title)
 
     # --- TAB 4: EDA ---
     with tab4:
