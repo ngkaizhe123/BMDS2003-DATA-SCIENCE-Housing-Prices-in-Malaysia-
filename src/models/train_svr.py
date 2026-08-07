@@ -37,6 +37,7 @@ def main():
     numerical_features = [
         "Transactions",
         "Log_Estimated_Size",
+        "Area_Transaction_Density",
     ]
 
     # Load raw dataset and run preprocessing pipeline ONCE
@@ -141,6 +142,7 @@ def main():
 
     print(f"Train R\u00b2  : {train_r2:.4f}")
     print(f"Test R\u00b2   : {test_r2:.4f}")
+    print(f"Final Gap : {train_r2 - test_r2:.4f}")
 
     # Print regression metrics (R2, MAE, RMSE)
     print_metrics("Support Vector Regression", y_test, y_pred)

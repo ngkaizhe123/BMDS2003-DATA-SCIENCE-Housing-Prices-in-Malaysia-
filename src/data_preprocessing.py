@@ -92,6 +92,19 @@ def multi_hot_encode_type(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 
+def add_area_density_features(df: pd.DataFrame) -> pd.DataFrame:
+    df_clean = df.copy()
+
+    if "Area" in df_clean.columns and "Transactions" in df_clean.columns:
+        total_transactions = df_clean["Transactions"].sum()
+        if total_transactions > 0:
+            area_tx_sum = df_clean.groupby("Area")["Transactions"].transform("sum")
+            df_clean["Area_Transaction_Density"] = area_tx_sum / total_transactions
+            print("[*] Area Transaction Density feature successfully engineered.")
+
+    return df_clean
+
+
 def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print(f"[*] Initial dataset shape: {df.shape}")
 
@@ -115,7 +128,10 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
         # Drop Median_PSF so the model doesn't cheat by knowing the price-per-sqft directly
         df = df.drop(columns=["Median_PSF"])
 
-    # 2. REMOVE OUTLIERS FIRST
+    # 2. ADD DENSITY AREA TRANSFORMATIONS (New Step)
+    df = add_area_density_features(df)
+
+    # 3. REMOVE OUTLIERS FIRST
     print("Outliers removal: ")
     print("Before removing outliers:", df.shape)
     df = remove_outliers_iqr(df, "Median_Price")
@@ -124,7 +140,7 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print("[*] Removed outliers based on Transactions.")
     print("After removing outliers:", df.shape)
 
-    # 3. CLEAN RARE CATEGORIES AFTER OUTLIERS ARE REMOVED
+    # 4. CLEAN RARE CATEGORIES AFTER OUTLIERS ARE REMOVED
     print("Before cleaning:")
     print(df["State"].value_counts())
     df = clean_state(df)
@@ -132,7 +148,7 @@ def run_preprocessing_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     print(df["State"].value_counts())
     df = bucket_rare_areas(df, min_count=5)
 
-    # 4. ENCODE TYPES
+    # 5. ENCODE TYPES
     df = multi_hot_encode_type(df)
 
     print(f"[*] Shape after preprocessing: {df.shape}")
