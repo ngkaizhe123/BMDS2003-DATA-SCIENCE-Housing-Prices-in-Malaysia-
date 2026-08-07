@@ -782,13 +782,26 @@ def main():
 
                 st.markdown("### R² Comparison (Train vs Test)")
                 show_image_if_exists(
-                    plots_dir / "model_comparison_r2.png", "Train vs Test R² Comparison"
+                    plots_dir / "model_comparison_r2.png",
+                    "Train vs Test R² Comparison (Higher is Better)",
                 )
 
-                st.markdown("### Test Error Comparison")
+                st.markdown("### Test MAE Comparison")
                 show_image_if_exists(
-                    plots_dir / "model_comparison_errors.png",
-                    "Test MAE & RMSE Comparison",
+                    plots_dir / "model_comparison_test_mae.png",
+                    "Test MAE Comparison (Lower is Better)",
+                )
+
+                st.markdown("### Test RMSE Comparison")
+                show_image_if_exists(
+                    plots_dir / "model_comparison_test_rmse.png",
+                    "Test RMSE Comparison (Lower is Better)",
+                )
+
+                st.markdown("### Test MAPE Comparison")
+                show_image_if_exists(
+                    plots_dir / "model_comparison_test_mape.png",
+                    "Test MAPE Comparison (Lower is Better)",
                 )
 
                 st.markdown("### Actual vs Predicted Plots")
@@ -828,13 +841,19 @@ def main():
                     st.caption("No Residuals vs Predicted plots found.")
 
                 st.markdown("### Other Model Assessment Plots")
+                known_plots = [
+                    "model_comparison_r2.png",
+                    "model_comparison_errors.png",
+                    "model_comparison_test_mae.png",
+                    "model_comparison_test_rmse.png",
+                    "model_comparison_test_mape.png",
+                ]
                 other_plots = [
                     f
                     for f in sorted(list(plots_dir.glob("*.png")))
                     if not f.name.startswith("actual_vs_predicted_")
                     and not f.name.startswith("residuals_vs_predicted_")
-                    and f.name
-                    not in ["model_comparison_r2.png", "model_comparison_errors.png"]
+                    and f.name not in known_plots
                 ]
                 if other_plots:
                     for plot_file in other_plots:
