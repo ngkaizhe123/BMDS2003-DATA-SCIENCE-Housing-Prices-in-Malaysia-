@@ -782,42 +782,59 @@ def main():
 
                 st.markdown("### R² Comparison (Train vs Test)")
                 show_image_if_exists(
-                    plots_dir / "model_comparison_r2.png",
-                    "Train vs Test R² Comparison"
+                    plots_dir / "model_comparison_r2.png", "Train vs Test R² Comparison"
                 )
 
                 st.markdown("### Test Error Comparison")
                 show_image_if_exists(
                     plots_dir / "model_comparison_errors.png",
-                    "Test MAE & RMSE Comparison"
+                    "Test MAE & RMSE Comparison",
                 )
 
                 st.markdown("### Actual vs Predicted Plots")
-                actual_vs_pred_files = sorted(list(plots_dir.glob("actual_vs_predicted_*.png")))
+                actual_vs_pred_files = sorted(
+                    list(plots_dir.glob("actual_vs_predicted_*.png"))
+                )
                 if actual_vs_pred_files:
                     for plot_file in actual_vs_pred_files:
-                        model_title = plot_file.stem.replace("actual_vs_predicted_", "").replace("_", " ").title()
+                        model_title = (
+                            plot_file.stem.replace("actual_vs_predicted_", "")
+                            .replace("_", " ")
+                            .title()
+                        )
                         st.markdown(f"#### Actual vs Predicted ({model_title})")
-                        show_image_if_exists(plot_file, f"Actual vs Predicted - {model_title}")
+                        show_image_if_exists(
+                            plot_file, f"Actual vs Predicted - {model_title}"
+                        )
                 else:
                     st.caption("No Actual vs Predicted plots found.")
 
                 st.markdown("### Residuals vs Predicted Plots")
-                residuals_files = sorted(list(plots_dir.glob("residuals_vs_predicted_*.png")))
+                residuals_files = sorted(
+                    list(plots_dir.glob("residuals_vs_predicted_*.png"))
+                )
                 if residuals_files:
                     for plot_file in residuals_files:
-                        model_title = plot_file.stem.replace("residuals_vs_predicted_", "").replace("_", " ").title()
+                        model_title = (
+                            plot_file.stem.replace("residuals_vs_predicted_", "")
+                            .replace("_", " ")
+                            .title()
+                        )
                         st.markdown(f"#### Residuals vs Predicted ({model_title})")
-                        show_image_if_exists(plot_file, f"Residuals vs Predicted - {model_title}")
+                        show_image_if_exists(
+                            plot_file, f"Residuals vs Predicted - {model_title}"
+                        )
                 else:
                     st.caption("No Residuals vs Predicted plots found.")
 
                 st.markdown("### Other Model Assessment Plots")
                 other_plots = [
-                    f for f in sorted(list(plots_dir.glob("*.png")))
+                    f
+                    for f in sorted(list(plots_dir.glob("*.png")))
                     if not f.name.startswith("actual_vs_predicted_")
                     and not f.name.startswith("residuals_vs_predicted_")
-                    and f.name not in ["model_comparison_r2.png", "model_comparison_errors.png"]
+                    and f.name
+                    not in ["model_comparison_r2.png", "model_comparison_errors.png"]
                 ]
                 if other_plots:
                     for plot_file in other_plots:
