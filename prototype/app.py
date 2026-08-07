@@ -376,10 +376,8 @@ def plot_market_comparison(state, prop_type, predicted_price, title="Market Benc
 
 
 def render_input_form(form_key):
-    # Load the hierarchical JSON (now containing ALL raw areas)
     state_area_lookup = load_state_area_lookup()
 
-    # Get all states, sorted
     available_states = sorted(list(state_area_lookup.keys()))
     if not available_states:
         available_states = [
@@ -392,6 +390,10 @@ def render_input_form(form_key):
     st.info(
         "💡 **Tip:** Use a preset below to auto-fill the form, or enter your own custom details."
     )
+
+    # 1. Track preset changes using a callback or checking session state changes
+    preset_key = f"preset_{form_key}"
+
     preset_choice = st.selectbox(
         "Auto Input Data (Optional):",
         [
@@ -400,7 +402,7 @@ def render_input_form(form_key):
             "Sample: Standard Terrace in Johor",
             "Sample: Affordable Flat in Penang",
         ],
-        key=f"preset_{form_key}",
+        key=preset_key,
     )
 
     (
@@ -468,33 +470,51 @@ def render_input_form(form_key):
             750,
         )
 
+    # 2. Force update session state when a preset is selected so widgets update correctly
+    state_widget_key = f"state_{form_key}"
+    area_widget_key = f"area_{form_key}"
+    tenure_widget_key = f"tenure_{form_key}"
+    type_widget_key = f"type_{form_key}"
+    size_widget_key = f"size_{form_key}"
+    chk_tx_key = f"chk_tx_{form_key}"
+    man_tx_key = f"man_tx_{form_key}"
+
+    if preset_choice != "Custom Input (Manual)":
+        st.session_state[state_widget_key] = default_state
+        # Ensure the area exists in that state before forcing it
+        areas_in_preset_state = sorted(list(state_area_lookup.get(default_state, {}).keys()))
+        if default_area in areas_in_preset_state:
+            st.session_state[area_widget_key] = default_area
+        st.session_state[tenure_widget_key] = default_tenure
+        st.session_state[type_widget_key] = default_type
+        st.session_state[size_widget_key] = default_size
+        st.session_state[chk_tx_key] = False
+        st.session_state[man_tx_key] = default_tx
+
     st.subheader("Property Features")
     col1, col2 = st.columns(2)
 
     with col1:
-        state_idx = available_states.index(default_state) if default_state in available_states else 0
-        state = st.selectbox("State", options=available_states, index=state_idx, key=f"state_{form_key}")
+        # State widget (uses session state if present)
+        state = st.selectbox("State", options=available_states, key=state_widget_key)
 
+        # Area dropdown dynamically updates based on the selected State
         areas_in_state = sorted(list(state_area_lookup.get(state, {}).keys()))
         if not areas_in_state:
             areas_in_state = ["Insufficient historical data available"]
 
-        area_idx = areas_in_state.index(default_area) if default_area in areas_in_state else 0
         area = st.selectbox(
             "Area / Township",
             options=areas_in_state,
-            index=area_idx,
-            key=f"area_{form_key}",
-            help="Select the specific town or neighborhood. If it says 'Insufficient data', try a different state."
+            key=area_widget_key,
+            help="Select the specific town or neighborhood."
         )
 
         tenure_options = ["Freehold", "Leasehold", "Freehold and Leasehold"]
-        tenure_idx = tenure_options.index(default_tenure) if default_tenure in tenure_options else 0
         tenure = st.selectbox(
             "Tenure",
             options=tenure_options,
-            index=tenure_idx,
-            key=f"tenure_{form_key}",
+            key=tenure_widget_key,
             help="Freehold = Ownership of land. Leasehold = Leased for a set period (e.g., 99 years)."
         )
 
@@ -510,12 +530,10 @@ def render_input_form(form_key):
             "Cluster House",
             "Town House",
         ]
-        type_idx = type_options.index(default_type) if default_type in type_options else 0
         prop_type = st.selectbox(
             "Property Type",
             options=type_options,
-            index=type_idx,
-            key=f"type_{form_key}",
+            key=type_widget_key,
             help="The architectural style or classification of the property."
         )
 
@@ -523,24 +541,25 @@ def render_input_form(form_key):
             "Estimated Built-up Size (sqft)",
             min_value=200,
             max_value=20000,
-            value=default_size,
             step=50,
-            key=f"size_{form_key}",
+            key=size_widget_key,
             help="A manual estimate of the property's floor space in square feet."
         )
 
-        is_manual = (preset_choice == "Custom Input (Manual)")
         use_default_tx = st.checkbox(
             "Auto-fill Transactions based on Area",
-            value=is_manual,
-            key=f"chk_tx_{form_key}",
+            key=chk_tx_key,
             help="Uncheck this to manually input a specific number of historical transactions."
+        )
+        st.caption(
+            "ℹ️ **Tip:** Transactions will be automatically mapped based on historical data matching your selected state and area."
         )
 
         if not use_default_tx:
             manual_tx = st.number_input(
                 "Number of Transactions",
-                min_value=1, max_value=5000, value=default_tx, key=f"man_tx_{form_key}"
+                min_value=1, max_value=5000,
+                key=man_tx_key
             )
         else:
             manual_tx = None
