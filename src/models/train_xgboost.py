@@ -139,6 +139,7 @@ def main():
 
     print(f"Train R²  : {train_r2:.4f}")
     print(f"Test R²   : {test_r2:.4f}")
+    print(f"Final Gap : {train_r2 - test_r2:.4f}")
 
     # Print metrics using utils
     print_metrics("XGBoost", y_test, y_pred)

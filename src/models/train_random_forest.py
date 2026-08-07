@@ -36,6 +36,7 @@ def main():
     numerical_features = [
         "Transactions",
         "Log_Estimated_Size",
+        "Area_Transaction_Density",
     ]
 
     # 1. Load raw dataset and run preprocessing pipeline ONCE
