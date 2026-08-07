@@ -119,69 +119,174 @@ def main():
 
         df_metrics = pd.DataFrame(metrics_data).T
 
-        # Chart 8: R² Comparison Chart
-        plt.figure(figsize=(10, 6))
-        sns.barplot(
-            x=df_metrics.index,
-            y="test_r2",
-            data=df_metrics,
-            palette="Blues_d",
-            hue=df_metrics.index,
-            legend=False,
+        # Chart: R² Comparison (Train vs Test side-by-side)
+        import numpy as np
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        x = np.arange(len(df_metrics))
+        width = 0.35
+        bars_train = ax.bar(
+            x - width / 2,
+            df_metrics["train_r2"],
+            width,
+            label="Train R²",
+            color="#74b9ff",
         )
-        plt.title(
-            "Model Comparison - Test R² Score (Higher is Better)",
+        bars_test = ax.bar(
+            x + width / 2,
+            df_metrics["test_r2"],
+            width,
+            label="Test R²",
+            color="#00b894",
+        )
+        ax.set_xticks(x)
+        ax.set_xticklabels(df_metrics.index, rotation=15)
+        ax.set_xlabel("Models")
+        ax.set_ylabel("R² Score")
+        ax.set_title(
+            "Model Comparison - Train vs Test R² Score (Higher is Better)",
             fontweight="bold",
         )
-        plt.xlabel("Models")
-        plt.ylabel("Test R² Score")
-        plt.ylim(0, 1.05)
-        plt.xticks(rotation=15)
+        ax.set_ylim(0, 1.15)
+        ax.legend(loc="upper right")
+        ax.axhline(0, color="gray", linewidth=0.8)
+
+        for p in ax.patches:
+            height = p.get_height()
+            if not np.isnan(height) and height > 0:
+                ax.annotate(
+                    f"{height:.4f}",
+                    (p.get_x() + p.get_width() / 2.0, height),
+                    ha="center",
+                    va="bottom",
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                    fontsize=9,
+                )
+
         plt.tight_layout()
         plt.savefig(output_dir / "model_comparison_r2.png", dpi=300)
         plt.close()
         print("✅ Saved model_comparison_r2.png")
 
-        # Error Metrics Comparison (RMSE and MAE)
-        if {"test_rmse", "test_mae"}.issubset(df_metrics.columns):
-            df_errors = (
-                df_metrics[["test_rmse", "test_mae"]]
-                .reset_index()
-                .melt(
-                    id_vars="index",
-                    var_name="Metric",
-                    value_name="Error (RM)",
-                )
-            )
-            df_errors["Metric"] = df_errors["Metric"].replace(
-                {"test_rmse": "RMSE", "test_mae": "MAE"}
-            )
-            plt.figure(figsize=(12, 6))
+        # Chart: Test MAE Comparison
+        if "test_mae" in df_metrics.columns:
+            fig, ax = plt.subplots(figsize=(10, 6))
             sns.barplot(
-                x="index",
-                y="Error (RM)",
-                hue="Metric",
-                data=df_errors,
-                palette="muted",
+                x=df_metrics.index,
+                y="test_mae",
+                data=df_metrics,
+                hue=df_metrics.index,
+                palette="Set2",
+                legend=False,
+                ax=ax,
             )
-            plt.title(
-                "Model Comparison - Test RMSE and MAE (Lower is Better)",
+            ax.set_xlabel("Models")
+            ax.set_ylabel("Test MAE (MYR)")
+            ax.set_title(
+                "Model Comparison - Test MAE (Lower is Better)",
                 fontweight="bold",
             )
-            plt.xlabel("Models")
-            plt.ylabel("Error Value (MYR)")
-            plt.xticks(rotation=15)
+            ax.yaxis.set_major_formatter(
+                ticker.FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+            for p in ax.patches:
+                ax.annotate(
+                    f"RM {p.get_height():,.0f}",
+                    (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                    ha="center",
+                    va="bottom",
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                )
+            ax.tick_params(axis="x", rotation=15)
+            ax.set_ylim(0, df_metrics["test_mae"].max() * 1.15)
             plt.tight_layout()
-            plt.savefig(output_dir / "model_comparison_errors.png", dpi=300)
+            plt.savefig(output_dir / "model_comparison_test_mae.png", dpi=300)
             plt.close()
-            print("✅ Saved model_comparison_errors.png")
+            print("✅ Saved model_comparison_test_mae.png")
+
+        # Chart: Test RMSE Comparison
+        if "test_rmse" in df_metrics.columns:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.barplot(
+                x=df_metrics.index,
+                y="test_rmse",
+                data=df_metrics,
+                hue=df_metrics.index,
+                palette="muted",
+                legend=False,
+                ax=ax,
+            )
+            ax.set_xlabel("Models")
+            ax.set_ylabel("Test RMSE (MYR)")
+            ax.set_title(
+                "Model Comparison - Test RMSE (Lower is Better)",
+                fontweight="bold",
+            )
+            ax.yaxis.set_major_formatter(
+                ticker.FuncFormatter(lambda x, p: format(int(x), ","))
+            )
+            for p in ax.patches:
+                ax.annotate(
+                    f"RM {p.get_height():,.0f}",
+                    (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                    ha="center",
+                    va="bottom",
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                )
+            ax.tick_params(axis="x", rotation=15)
+            ax.set_ylim(0, df_metrics["test_rmse"].max() * 1.15)
+            plt.tight_layout()
+            plt.savefig(output_dir / "model_comparison_test_rmse.png", dpi=300)
+            plt.close()
+            print("✅ Saved model_comparison_test_rmse.png")
+
+        # Chart: Test MAPE Comparison
+        if "test_mape" in df_metrics.columns:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            mape_pct = df_metrics["test_mape"] * 100
+            sns.barplot(
+                x=df_metrics.index,
+                y=mape_pct,
+                hue=df_metrics.index,
+                palette="coolwarm",
+                legend=False,
+                ax=ax,
+            )
+            ax.set_xlabel("Models")
+            ax.set_ylabel("Test MAPE (%)")
+            ax.set_title(
+                "Model Comparison - Test MAPE (Lower is Better)",
+                fontweight="bold",
+            )
+            for p in ax.patches:
+                ax.annotate(
+                    f"{p.get_height():.2f}%",
+                    (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                    ha="center",
+                    va="bottom",
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                )
+            ax.tick_params(axis="x", rotation=15)
+            ax.set_ylim(0, (df_metrics["test_mape"].max() * 100) * 1.15)
+            plt.tight_layout()
+            plt.savefig(output_dir / "model_comparison_test_mape.png", dpi=300)
+            plt.close()
+            print("✅ Saved model_comparison_test_mape.png")
 
     # MODEL SELF-DIAGNOSTICS (TRAIN VS TEST CHARTS)
     print(
         "Generating individual model diagnostics (Actual vs Predicted & Residuals)..."
     )
     categorical_features = ["Area", "State", "Tenure"]
-    numerical_features = ["Transactions", "Log_Estimated_Size"]
+    numerical_features = [
+        "Transactions",
+        "Log_Estimated_Size",
+        "Area_Transaction_Density",
+    ]
 
     # Retrieve both training and testing datasets
     X_train, X_test, y_train, y_test = split_dataset(
