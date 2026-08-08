@@ -185,7 +185,9 @@ def evaluate_train_test_performance(
     # Calculate log-transformed MAE and RMSE
     train_mae_log = mean_absolute_error(np.log1p(y_train), np.log1p(y_train_pred))
     test_mae_log = mean_absolute_error(np.log1p(y_test), np.log1p(y_pred))
-    train_rmse_log = np.sqrt(mean_squared_error(np.log1p(y_train), np.log1p(y_train_pred)))
+    train_rmse_log = np.sqrt(
+        mean_squared_error(np.log1p(y_train), np.log1p(y_train_pred))
+    )
     test_rmse_log = np.sqrt(mean_squared_error(np.log1p(y_test), np.log1p(y_pred)))
 
     print("\nTrain vs Test Performance")
