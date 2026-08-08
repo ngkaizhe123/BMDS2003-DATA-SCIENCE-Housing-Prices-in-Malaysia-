@@ -67,14 +67,16 @@ def load_raw_data():
     return pd.read_csv(data_path)
 
 
-def show_image_if_exists(path: Path, caption: str = None):
+def show_image_if_exists(
+    path: Path, caption: str = None, script_hint: str = "src/eda.py"
+):
     """Display a saved plot if it exists, otherwise show a clear message
     instead of silently failing or crashing the tab."""
     if path.exists():
         st.image(str(path), caption=caption, use_container_width=True)
     else:
         st.caption(
-            f"⚠️ Plot not found: `{path.name}`. Run `python src/eda.py` to generate it."
+            f"⚠️ Plot not found: `{path.name}`. Run `python {script_hint}` to generate it."
         )
 
 
@@ -784,24 +786,28 @@ def main():
                 show_image_if_exists(
                     plots_dir / "model_comparison_r2.png",
                     "Train vs Test R² Comparison (Higher is Better)",
+                    script_hint="src/model_visual.py",
                 )
 
                 st.markdown("### Test MAE Comparison")
                 show_image_if_exists(
                     plots_dir / "model_comparison_test_mae.png",
                     "Test MAE Comparison (Lower is Better)",
+                    script_hint="src/model_visual.py",
                 )
 
                 st.markdown("### Test RMSE Comparison")
                 show_image_if_exists(
                     plots_dir / "model_comparison_test_rmse.png",
                     "Test RMSE Comparison (Lower is Better)",
+                    script_hint="src/model_visual.py",
                 )
 
                 st.markdown("### Test MAPE Comparison")
                 show_image_if_exists(
                     plots_dir / "model_comparison_test_mape.png",
                     "Test MAPE Comparison (Lower is Better)",
+                    script_hint="src/model_visual.py",
                 )
 
                 st.markdown("### Actual vs Predicted Plots")
@@ -817,7 +823,9 @@ def main():
                         )
                         st.markdown(f"#### Actual vs Predicted ({model_title})")
                         show_image_if_exists(
-                            plot_file, f"Actual vs Predicted - {model_title}"
+                            plot_file,
+                            f"Actual vs Predicted - {model_title}",
+                            script_hint="src/model_visual.py",
                         )
                 else:
                     st.caption("No Actual vs Predicted plots found.")
@@ -835,7 +843,9 @@ def main():
                         )
                         st.markdown(f"#### Residuals vs Predicted ({model_title})")
                         show_image_if_exists(
-                            plot_file, f"Residuals vs Predicted - {model_title}"
+                            plot_file,
+                            f"Residuals vs Predicted - {model_title}",
+                            script_hint="src/model_visual.py",
                         )
                 else:
                     st.caption("No Residuals vs Predicted plots found.")
@@ -859,7 +869,9 @@ def main():
                     for plot_file in other_plots:
                         title = plot_file.stem.replace("_", " ").title()
                         st.markdown(f"#### {title}")
-                        show_image_if_exists(plot_file, title)
+                        show_image_if_exists(
+                            plot_file, title, script_hint="src/model_visual.py"
+                        )
 
     # --- TAB 4: EDA ---
     with tab4:
