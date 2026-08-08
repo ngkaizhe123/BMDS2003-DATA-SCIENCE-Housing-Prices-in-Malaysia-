@@ -67,7 +67,9 @@ def load_raw_data():
     return pd.read_csv(data_path)
 
 
-def show_image_if_exists(path: Path, caption: str = None, script_hint: str = "src/eda.py"):
+def show_image_if_exists(
+    path: Path, caption: str = None, script_hint: str = "src/eda.py"
+):
     """Display a saved plot if it exists, otherwise show a clear message
     instead of silently failing or crashing the tab."""
     if path.exists():
