@@ -759,7 +759,7 @@ def main():
 
                 for col in ["train_mae", "test_mae", "train_rmse", "test_rmse"]:
                     display_df[col] = display_df[col].map(
-                        lambda x: f"RM {x:,.0f}" if pd.notna(x) else "—"
+                        lambda x: f"{x:.4f}" if pd.notna(x) else "—"
                     )
 
                 for col in ["train_mape", "test_mape"]:

@@ -187,7 +187,7 @@ def main():
                 ax=ax,
             )
             ax.set_xlabel("Models")
-            ax.set_ylabel("Test MAE (MYR)")
+            ax.set_ylabel("Test MAE (RM)")
             ax.set_title(
                 "Model Comparison - Test MAE (Lower is Better)",
                 fontweight="bold",
@@ -223,7 +223,7 @@ def main():
                 ax=ax,
             )
             ax.set_xlabel("Models")
-            ax.set_ylabel("Test RMSE (MYR)")
+            ax.set_ylabel("Test RMSE (RM)")
             ax.set_title(
                 "Model Comparison - Test RMSE (Lower is Better)",
                 fontweight="bold",
