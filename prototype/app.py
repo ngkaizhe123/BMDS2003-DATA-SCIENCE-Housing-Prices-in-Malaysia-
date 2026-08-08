@@ -63,16 +63,15 @@ def load_raw_data():
     return pd.read_csv(data_path)
 
 
-def show_image_if_exists(
-        path: Path, caption: str = None
-):
+# FIXED: Added script_hint parameter here to solve the TypeError
+def show_image_if_exists(path: Path, caption: str = None, script_hint: str = "src/eda.py"):
     """Display a saved plot if it exists, otherwise show a clear message
     instead of silently failing or crashing the tab."""
     if path.exists():
         st.image(str(path), caption=caption, use_container_width=True)
     else:
         st.caption(
-            f"⚠️ Plot not found: `{path.name}`. Run `python src/eda.py` to generate it."
+            f"⚠️ Plot not found: `{path.name}`. Run `python {script_hint}` to generate it."
         )
 
 
@@ -86,11 +85,6 @@ def _count_iqr_outliers(series: pd.Series) -> int:
 
 # ---------------------------------------------------------
 # Pipeline introspection helpers
-#
-# These walk into the fitted model (which may be wrapped in a
-# TransformedTargetRegressor, then a Pipeline, then a ColumnTransformer)
-# to recover exactly what the model expects, instead of hardcoding
-# feature lists that can silently drift out of sync with training code.
 # ---------------------------------------------------------
 
 
@@ -155,13 +149,6 @@ def _get_onehot_categories(model, raw_col_name):
 
 
 def resolve_area_category(model, area_name, state_name):
-    """
-    Training buckets rare Areas into 'Other_<State>'. Mirror that here so a
-    typed-in Area the model never saw doesn't silently get zeroed out by
-    OneHotEncoder(handle_unknown='ignore') without the user knowing.
-
-    Returns (resolved_area, was_remapped).
-    """
     known_areas = _get_onehot_categories(model, "Area")
     if known_areas is None:
         return area_name, False
@@ -180,16 +167,7 @@ def resolve_area_category(model, area_name, state_name):
 # Feature preparation
 # ---------------------------------------------------------
 
-
 def prepare_input_features(raw_input: dict, expected_columns: list, state_area_lookup: dict):
-    """
-    Build a single-row DataFrame matching exactly what the trained
-    preprocessor expects (pulled live from the model via `feature_names_in_`),
-    so this never drifts out of sync with the training script again.
-
-    Returns (df, notes) — notes describes any columns that had to be
-    auto-derived or defaulted.
-    """
     notes = []
     row = {}
 
@@ -218,8 +196,6 @@ def prepare_input_features(raw_input: dict, expected_columns: list, state_area_l
             raw_type_name = col.replace("Type_", "")
             row[col] = 1 if raw_type_name in selected_types else 0
 
-    # Any remaining expected column: try to auto-derive Log_X from X,
-    # otherwise fall back to a safe default and flag it.
     for col in expected_columns:
         if col in row:
             continue
@@ -254,7 +230,7 @@ def predict_price(model, raw_input: dict, state_area_lookup: dict):
         if remapped:
             notes.append(
                 f"'{working_input['Area']}' not in training data's known areas, "
-                f"reverted to using '{resolved_area}' (state-level estimate), prediction accuracy may be compromised."
+                f"reverted to using '{resolved_area}' (state-level estimate)."
             )
         working_input["Area"] = resolved_area
 
@@ -266,12 +242,11 @@ def predict_price(model, raw_input: dict, state_area_lookup: dict):
 
 
 def area_reliability_note(area_freq, area_name, threshold=5):
-    """Extra warning based on how many training rows actually back this Area."""
     if area_freq is None:
         return None
     count = int(area_freq.get(area_name, 0))
     if count == 0:
-        return None  # already covered by resolve_area_category's note
+        return None
     if count < threshold:
         return f"Note: Training data only has {count} records for '{area_name}', prediction stability may be compromised."
     return None
@@ -281,10 +256,7 @@ def area_reliability_note(area_freq, area_name, threshold=5):
 # SHAP explanation (tree models only: XGBoost, Random Forest)
 # ---------------------------------------------------------
 
-
 def explain_tree_prediction(model, raw_input: dict, state_area_lookup: dict):
-    """Best-effort SHAP waterfall for tree-based models. Returns a matplotlib
-    figure, or None if unavailable (missing shap, or non-tree model)."""
     try:
         import shap
     except ImportError:
@@ -403,7 +375,6 @@ def render_input_form(form_key):
         "💡 **Tip:** Use a preset below to auto-fill the form, or enter your own custom details."
     )
 
-    # 1. Track preset changes using a callback or checking session state changes
     preset_key = f"preset_{form_key}"
 
     preset_choice = st.selectbox(
@@ -482,7 +453,6 @@ def render_input_form(form_key):
             750,
         )
 
-    # 2. Force update session state when a preset is selected so widgets update correctly
     state_widget_key = f"state_{form_key}"
     area_widget_key = f"area_{form_key}"
     tenure_widget_key = f"tenure_{form_key}"
@@ -493,7 +463,6 @@ def render_input_form(form_key):
 
     if preset_choice != "Custom Input (Manual)":
         st.session_state[state_widget_key] = default_state
-        # Ensure the area exists in that state before forcing it
         areas_in_preset_state = sorted(list(state_area_lookup.get(default_state, {}).keys()))
         if default_area in areas_in_preset_state:
             st.session_state[area_widget_key] = default_area
@@ -507,10 +476,8 @@ def render_input_form(form_key):
     col1, col2 = st.columns(2)
 
     with col1:
-        # State widget (uses session state if present)
         state = st.selectbox("State", options=available_states, key=state_widget_key)
 
-        # Area dropdown dynamically updates based on the selected State
         areas_in_state = sorted(list(state_area_lookup.get(state, {}).keys()))
         if not areas_in_state:
             areas_in_state = ["Insufficient historical data available"]
@@ -603,7 +570,6 @@ def main():
     st.title("🏠 Malaysia Housing Price Predictor")
 
     models = load_models()
-    # Load raw data to generate the area frequencies for the warning note
     raw_df = load_raw_data()
     area_freq = raw_df["Area"].value_counts().to_dict() if raw_df is not None else {}
 
@@ -641,7 +607,6 @@ def main():
                     value=f"RM {pred:,.2f}",
                 )
 
-                # Add the reliability note if the area has less than 5 samples
                 area_note = area_reliability_note(area_freq, user_features["Area"], threshold=5)
                 if area_note:
                     notes.append(area_note)
@@ -744,7 +709,7 @@ def main():
         current_path = Path(__file__).resolve().parent
         project_root = current_path.parent
         metrics_path = project_root / "report_assets" / "metrics.json"
-        plots_dir = project_root / "report_assets" / "plots"####highlight####
+        plots_dir = project_root / "report_assets" / "plots"
 
         if not metrics_path.exists():
             st.info(
@@ -830,6 +795,13 @@ def main():
                 display_df = display_df[display_cols]
 
                 st.dataframe(display_df, use_container_width=True)
+
+                # ==========================================
+                # SUMMARY SECTION
+                # ==========================================
+                st.markdown("### Model Performance Summary")
+                st.info("Write your summary and insights about the table metrics here.")
+                # ==========================================
 
                 st.markdown("### R² Comparison (Train vs Test)")
                 show_image_if_exists(
