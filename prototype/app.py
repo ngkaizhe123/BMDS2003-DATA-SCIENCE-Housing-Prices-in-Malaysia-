@@ -64,7 +64,9 @@ def load_raw_data():
 
 
 # FIXED: Added script_hint parameter here to solve the TypeError
-def show_image_if_exists(path: Path, caption: str = None, script_hint: str = "src/eda.py"):
+def show_image_if_exists(
+    path: Path, caption: str = None, script_hint: str = "src/eda.py"
+):
     """Display a saved plot if it exists, otherwise show a clear message
     instead of silently failing or crashing the tab."""
     if path.exists():
@@ -167,7 +169,10 @@ def resolve_area_category(model, area_name, state_name):
 # Feature preparation
 # ---------------------------------------------------------
 
-def prepare_input_features(raw_input: dict, expected_columns: list, state_area_lookup: dict):
+
+def prepare_input_features(
+    raw_input: dict, expected_columns: list, state_area_lookup: dict
+):
     notes = []
     row = {}
 
@@ -187,7 +192,9 @@ def prepare_input_features(raw_input: dict, expected_columns: list, state_area_l
             row["Transactions"] = area_data.get("Transactions", 16.0)
 
     if "Area_Transaction_Density" in expected_columns:
-        row["Area_Transaction_Density"] = area_data.get("Area_Transaction_Density", 0.005)
+        row["Area_Transaction_Density"] = area_data.get(
+            "Area_Transaction_Density", 0.005
+        )
 
     type_cols = [c for c in expected_columns if c.startswith("Type_")]
     if type_cols and "Type" in raw_input:
@@ -216,9 +223,7 @@ def prepare_input_features(raw_input: dict, expected_columns: list, state_area_l
 def predict_price(model, raw_input: dict, state_area_lookup: dict):
     expected_columns = get_expected_columns(model)
     if expected_columns is None:
-        raise ValueError(
-            "Unable to read expected feature columns from the model."
-        )
+        raise ValueError("Unable to read expected feature columns from the model.")
 
     notes = []
     working_input = dict(raw_input)
@@ -234,7 +239,9 @@ def predict_price(model, raw_input: dict, state_area_lookup: dict):
             )
         working_input["Area"] = resolved_area
 
-    df, fill_notes = prepare_input_features(working_input, expected_columns, state_area_lookup)
+    df, fill_notes = prepare_input_features(
+        working_input, expected_columns, state_area_lookup
+    )
     notes.extend(fill_notes)
 
     pred = float(model.predict(df)[0])
@@ -255,6 +262,7 @@ def area_reliability_note(area_freq, area_name, threshold=5):
 # ---------------------------------------------------------
 # SHAP explanation (tree models only: XGBoost, Random Forest)
 # ---------------------------------------------------------
+
 
 def explain_tree_prediction(model, raw_input: dict, state_area_lookup: dict):
     try:
@@ -364,12 +372,7 @@ def render_input_form(form_key):
 
     available_states = sorted(list(state_area_lookup.keys()))
     if not available_states:
-        available_states = [
-            "Selangor",
-            "Kuala Lumpur",
-            "Johor",
-            "Penang"
-        ]
+        available_states = ["Selangor", "Kuala Lumpur", "Johor", "Penang"]
 
     st.info(
         "💡 **Tip:** Use a preset below to auto-fill the form, or enter your own custom details."
@@ -463,7 +466,9 @@ def render_input_form(form_key):
 
     if preset_choice != "Custom Input (Manual)":
         st.session_state[state_widget_key] = default_state
-        areas_in_preset_state = sorted(list(state_area_lookup.get(default_state, {}).keys()))
+        areas_in_preset_state = sorted(
+            list(state_area_lookup.get(default_state, {}).keys())
+        )
         if default_area in areas_in_preset_state:
             st.session_state[area_widget_key] = default_area
         st.session_state[tenure_widget_key] = default_tenure
@@ -486,7 +491,7 @@ def render_input_form(form_key):
             "Area / Township",
             options=areas_in_state,
             key=area_widget_key,
-            help="Select the specific town or neighborhood."
+            help="Select the specific town or neighborhood.",
         )
 
         tenure_options = ["Freehold", "Leasehold", "Freehold and Leasehold"]
@@ -494,7 +499,7 @@ def render_input_form(form_key):
             "Tenure",
             options=tenure_options,
             key=tenure_widget_key,
-            help="Freehold = Ownership of land. Leasehold = Leased for a set period (e.g., 99 years)."
+            help="Freehold = Ownership of land. Leasehold = Leased for a set period (e.g., 99 years).",
         )
 
     with col2:
@@ -513,7 +518,7 @@ def render_input_form(form_key):
             "Property Type",
             options=type_options,
             key=type_widget_key,
-            help="The architectural style or classification of the property."
+            help="The architectural style or classification of the property.",
         )
 
         estimated_size = st.number_input(
@@ -522,13 +527,13 @@ def render_input_form(form_key):
             max_value=20000,
             step=50,
             key=size_widget_key,
-            help="A manual estimate of the property's floor space in square feet."
+            help="A manual estimate of the property's floor space in square feet.",
         )
 
         use_default_tx = st.checkbox(
             "Auto-fill Transactions based on Area",
             key=chk_tx_key,
-            help="Uncheck this to manually input a specific number of historical transactions."
+            help="Uncheck this to manually input a specific number of historical transactions.",
         )
         st.caption(
             "ℹ️ **Tip:** Transactions will be automatically mapped based on historical data matching your selected state and area."
@@ -536,14 +541,14 @@ def render_input_form(form_key):
 
         if not use_default_tx:
             manual_tx = st.number_input(
-                "Number of Transactions",
-                min_value=1, max_value=5000,
-                key=man_tx_key
+                "Number of Transactions", min_value=0, max_value=5000, key=man_tx_key
             )
         else:
             manual_tx = None
 
-    submitted = st.button("Predict Price", use_container_width=True, key=f"btn_{form_key}")
+    submitted = st.button(
+        "Predict Price", use_container_width=True, key=f"btn_{form_key}"
+    )
 
     user_features = None
     if submitted:
@@ -599,7 +604,9 @@ def main():
 
         if user_features:
             try:
-                pred, notes = predict_price(selected_model, user_features, state_area_lookup)
+                pred, notes = predict_price(
+                    selected_model, user_features, state_area_lookup
+                )
 
                 st.success("Analysis Complete!")
                 st.metric(
@@ -607,7 +614,9 @@ def main():
                     value=f"RM {pred:,.2f}",
                 )
 
-                area_note = area_reliability_note(area_freq, user_features["Area"], threshold=5)
+                area_note = area_reliability_note(
+                    area_freq, user_features["Area"], threshold=5
+                )
                 if area_note:
                     notes.append(area_note)
 
@@ -622,7 +631,9 @@ def main():
                     title=f"Market Benchmark ({selected_model_name})",
                 )
 
-                shap_fig = explain_tree_prediction(selected_model, user_features, state_area_lookup)
+                shap_fig = explain_tree_prediction(
+                    selected_model, user_features, state_area_lookup
+                )
                 if shap_fig is not None:
                     with st.expander("🔍 Why? (SHAP Explanation)"):
                         st.caption(
@@ -655,7 +666,9 @@ def main():
             all_notes = {}
             for idx, (m_name, m_obj) in enumerate(models.items()):
                 try:
-                    pred, notes = predict_price(m_obj, comp_features, comp_state_area_lookup)
+                    pred, notes = predict_price(
+                        m_obj, comp_features, comp_state_area_lookup
+                    )
                     predictions[m_name] = pred
                     all_notes[m_name] = notes
                     cols[idx].metric(label=m_name, value=f"RM {pred:,.2f}")
@@ -683,7 +696,9 @@ def main():
                     plt.FuncFormatter(lambda x, p: format(int(x), ","))
                 )
 
-                wrapped_labels = [label.replace(" ", "\n") for label in predictions.keys()]
+                wrapped_labels = [
+                    label.replace(" ", "\n") for label in predictions.keys()
+                ]
                 ax.set_xticklabels(wrapped_labels)
 
                 max_pred = max(predictions.values())

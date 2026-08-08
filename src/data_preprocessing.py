@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
             area_dict[area] = {
                 "Transactions": med_tx,
-                "Area_Transaction_Density": density
+                "Area_Transaction_Density": density,
             }
 
         state_area_lookup[state] = area_dict
