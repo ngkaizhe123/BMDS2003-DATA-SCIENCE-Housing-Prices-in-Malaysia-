@@ -2,12 +2,6 @@ import numpy as np
 import sys
 from pathlib import Path
 
-from sklearn.metrics import (
-    r2_score,
-    mean_absolute_error,
-    mean_squared_error,
-    mean_absolute_percentage_error,
-)
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
@@ -27,6 +21,7 @@ from src.utils import (
     print_metrics,
     save_model,
     save_metrics,
+    evaluate_train_test_performance,
 )
 
 
@@ -103,61 +98,19 @@ def main():
     search.fit(X_train, y_train)
     print("Evaluating model...")
 
-    # y_pred = model_pipeline.predict(X_test)
     best_model = search.best_estimator_
-    y_pred = best_model.predict(X_test)
 
     # =============================
     # Train vs Test Performance
     # =============================
-
-    y_train_pred = best_model.predict(X_train)
-
-    train_r2 = r2_score(y_train, y_train_pred)
-    test_r2 = r2_score(y_test, y_pred)
-
-    train_mae = mean_absolute_error(y_train, y_train_pred)
-    test_mae = mean_absolute_error(y_test, y_pred)
-
-    train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
-    test_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
-    train_mape = mean_absolute_percentage_error(y_train, y_train_pred)
-    test_mape = mean_absolute_percentage_error(y_test, y_pred)
-
-    print("\nTrain vs Test Performance")
-    print("-" * 40)
-
-    print(f"Train MAE : RM {train_mae:,.2f}")
-    print(f"Test MAE  : RM {test_mae:,.2f}")
-
-    print(f"Train RMSE: RM {train_rmse:,.2f}")
-    print(f"Test RMSE : RM {test_rmse:,.2f}")
-
-    print(f"Train MAPE: {train_mape * 100:.2f}%")
-    print(f"Test MAPE : {test_mape * 100:.2f}%")
-
-    print(f"Train R²  : {train_r2:.4f}")
-    print(f"Test R²   : {test_r2:.4f}")
-    print(f"Final Gap : {train_r2 - test_r2:.4f}")
+    metrics, y_pred = evaluate_train_test_performance(
+        best_model, X_train, X_test, y_train, y_test
+    )
 
     # Print metrics using utils
     print_metrics("XGBoost", y_test, y_pred)
     metrics_output_path = project_root / "report_assets" / "metrics.json"
-    save_metrics(
-        "XGBoost",
-        {
-            "train_r2": train_r2,
-            "test_r2": test_r2,
-            "train_mae": train_mae,
-            "test_mae": test_mae,
-            "train_rmse": train_rmse,
-            "test_rmse": test_rmse,
-            "train_mape": train_mape,
-            "test_mape": test_mape,
-        },
-        metrics_output_path,
-    )
+    save_metrics("XGBoost", metrics, metrics_output_path)
 
     print(f"Best parameters found: {search.best_params_}")
     print(f"Best Model R2 Score: {search.best_score_}")

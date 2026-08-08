@@ -157,7 +157,66 @@ def prepare_input_features(input_dict: dict) -> pd.DataFrame:
 
 
 # for models analysis and comparison
+def evaluate_train_test_performance(
+    model,
+    X_train,
+    X_test,
+    y_train,
+    y_test,
+):
+    """Compute Train vs Test metrics, print the summary block, and return a
+    metrics dict where MAE and RMSE are stored in log1p scale and MAPE is
+    stored as raw percentage."""
+    y_train_pred = model.predict(X_train)
+    y_pred = model.predict(X_test)
+
+    train_r2 = r2_score(y_train, y_train_pred)
+    test_r2 = r2_score(y_test, y_pred)
+
+    train_mae = mean_absolute_error(y_train, y_train_pred)
+    test_mae = mean_absolute_error(y_test, y_pred)
+
+    train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
+    test_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    train_mape = mean_absolute_percentage_error(y_train, y_train_pred)
+    test_mape = mean_absolute_percentage_error(y_test, y_pred)
+
+    # Calculate log-transformed MAE and RMSE
+    train_mae_log = mean_absolute_error(np.log1p(y_train), np.log1p(y_train_pred))
+    test_mae_log = mean_absolute_error(np.log1p(y_test), np.log1p(y_pred))
+    train_rmse_log = np.sqrt(mean_squared_error(np.log1p(y_train), np.log1p(y_train_pred)))
+    test_rmse_log = np.sqrt(mean_squared_error(np.log1p(y_test), np.log1p(y_pred)))
+
+    print("\nTrain vs Test Performance")
+    print("-" * 40)
+    print(f"Train Log MAE : {train_mae_log:.4f}")
+    print(f"Test Log MAE  : {test_mae_log:.4f}")
+    print(f"Train Log RMSE: {train_rmse_log:.4f}")
+    print(f"Test Log RMSE : {test_rmse_log:.4f}")
+    print(f"Train MAPE: {train_mape * 100:.2f}%")
+    print(f"Test MAPE : {test_mape * 100:.2f}%")
+    print(f"Train R\u00b2  : {train_r2:.4f}")
+    print(f"Test R\u00b2   : {test_r2:.4f}")
+    print(f"Final Gap : {train_r2 - test_r2:.4f}")
+
+    return {
+        "train_r2": train_r2,
+        "test_r2": test_r2,
+        "train_mae": float(train_mae_log),
+        "test_mae": float(test_mae_log),
+        "train_rmse": float(train_rmse_log),
+        "test_rmse": float(test_rmse_log),
+        "train_mape": float(train_mape),
+        "test_mape": float(test_mape),
+    }, y_pred
+
+
 def save_metrics(model_name: str, metrics: dict, output_path: Path):
+    """Persist a model's metrics dict to the shared metrics.json file.
+
+    MAE and RMSE values are in log scale; MAPE is a plain ratio; R² is as-is.
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if output_path.exists():
