@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import sys
+import textwrap
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -14,6 +15,8 @@ from src.utils import load_raw_dataset, split_dataset
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     data_path = project_root / "data" / "raw" / "malaysia_house_price_data_2025.csv"
     output_dir = project_root / "report_assets" / "plots"
     output_dir.mkdir(exist_ok=True)
@@ -118,6 +121,9 @@ def main():
             metrics_data = json.load(f)
 
         df_metrics = pd.DataFrame(metrics_data).T
+        wrapped_labels = [
+            textwrap.fill(str(label), width=12) for label in df_metrics.index
+        ]
 
         # Chart: R² Comparison (Train vs Test side-by-side)
         import numpy as np
@@ -140,7 +146,7 @@ def main():
             color="#00b894",
         )
         ax.set_xticks(x)
-        ax.set_xticklabels(df_metrics.index, rotation=15)
+        ax.set_xticklabels(wrapped_labels, rotation=0, ha="center")
         ax.set_xlabel("Models")
         ax.set_ylabel("R² Score")
         ax.set_title(
@@ -173,10 +179,9 @@ def main():
         if "test_mae" in df_metrics.columns:
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.barplot(
-                x=df_metrics.index,
-                y="test_mae",
-                data=df_metrics,
-                hue=df_metrics.index,
+                x=wrapped_labels,
+                y=df_metrics["test_mae"],
+                hue=wrapped_labels,
                 palette="Set2",
                 legend=False,
                 ax=ax,
@@ -199,7 +204,7 @@ def main():
                     xytext=(0, 5),
                     textcoords="offset points",
                 )
-            ax.tick_params(axis="x", rotation=15)
+            ax.tick_params(axis="x", rotation=0)
             ax.set_ylim(0, df_metrics["test_mae"].max() * 1.15)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_mae.png", dpi=300)
@@ -210,10 +215,9 @@ def main():
         if "test_rmse" in df_metrics.columns:
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.barplot(
-                x=df_metrics.index,
-                y="test_rmse",
-                data=df_metrics,
-                hue=df_metrics.index,
+                x=wrapped_labels,
+                y=df_metrics["test_rmse"],
+                hue=wrapped_labels,
                 palette="muted",
                 legend=False,
                 ax=ax,
@@ -236,7 +240,7 @@ def main():
                     xytext=(0, 5),
                     textcoords="offset points",
                 )
-            ax.tick_params(axis="x", rotation=15)
+            ax.tick_params(axis="x", rotation=0)
             ax.set_ylim(0, df_metrics["test_rmse"].max() * 1.15)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_rmse.png", dpi=300)
@@ -248,9 +252,9 @@ def main():
             fig, ax = plt.subplots(figsize=(10, 6))
             mape_pct = df_metrics["test_mape"] * 100
             sns.barplot(
-                x=df_metrics.index,
+                x=wrapped_labels,
                 y=mape_pct,
-                hue=df_metrics.index,
+                hue=wrapped_labels,
                 palette="coolwarm",
                 legend=False,
                 ax=ax,
@@ -270,7 +274,7 @@ def main():
                     xytext=(0, 5),
                     textcoords="offset points",
                 )
-            ax.tick_params(axis="x", rotation=15)
+            ax.tick_params(axis="x", rotation=0)
             ax.set_ylim(0, (df_metrics["test_mape"].max() * 100) * 1.15)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_mape.png", dpi=300)
