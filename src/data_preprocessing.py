@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sys
 from pathlib import Path
+import json
 
 
 def handle_missing_values(
@@ -181,3 +182,40 @@ if __name__ == "__main__":
     print(f"Saving cleaned data to {output_path}...")
     clean_df.to_csv(output_path, index=False)
     print("✅ Data successfully preprocessed and saved!")
+
+    # =========================================================
+    # 4. Generate LookUp table
+    # =========================================================
+    print("Generating State-Area lookup table from RAW data...")
+
+    state_area_lookup = {}
+
+    # Calculate total transactions from raw data for accurate density
+    total_tx = raw_df["Transactions"].sum()
+
+    # Iterate through all original states
+    for state in raw_df["State"].dropna().unique():
+        state_areas = raw_df[raw_df["State"] == state].dropna(subset=["Area"])
+
+        area_dict = {}
+        for area, group in state_areas.groupby("Area"):
+            # Get median transactions, fallback to 16.0 if NaN
+            med_tx = group["Transactions"].median()
+            med_tx = med_tx if pd.notna(med_tx) else 16.0
+
+            # Calculate original Area Transaction Density
+            area_tx_sum = group["Transactions"].sum()
+            density = area_tx_sum / total_tx if total_tx > 0 else 0.005
+
+            area_dict[area] = {
+                "Transactions": med_tx,
+                "Area_Transaction_Density": density
+            }
+
+        state_area_lookup[state] = area_dict
+
+    lookup_path = output_dir / "state_area_lookup_table.json"
+    with open(lookup_path, "w") as f:
+        json.dump(state_area_lookup, f, indent=4)
+
+    print(f"✅ Lookup table successfully saved to {lookup_path}")

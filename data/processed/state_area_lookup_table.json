@@ -1,0 +1,1262 @@
+{
+    "Penang": {
+        "Ayer Itam": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0056778740900272325
+        },
+        "Balik Pulau": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.00021358774006372035
+        },
+        "Batu Ferringhi": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.0006051652635138743
+        },
+        "Batu Kawan": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0012993254187209655
+        },
+        "Bayan Baru": {
+            "Transactions": 24.0,
+            "Area_Transaction_Density": 0.0017087019205097628
+        },
+        "Bayan Lepas": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0029368314258761546
+        },
+        "Bukit Jambul": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0007653560685616646
+        },
+        "Bukit Mertajam": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.008668102450919318
+        },
+        "Bukit Minyak": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.000783155046900308
+        },
+        "Butterworth": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.002207073313991777
+        },
+        "Gelugor": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.002029083530605343
+        },
+        "Georgetown": {
+            "Transactions": 18.0,
+            "Area_Transaction_Density": 0.0013883203104141822
+        },
+        "Gurney": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.00026698467507965044
+        },
+        "Jelutong": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.003364006906003595
+        },
+        "Juru": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Kepala Batas": {
+            "Transactions": 28.0,
+            "Area_Transaction_Density": 0.004040368082872043
+        },
+        "Kubang Semang": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0002847836534182938
+        },
+        "Nibong Tebal": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.002313867184023637
+        },
+        "Penaga": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.0031148212092625884
+        },
+        "Perai": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.003008027339230728
+        },
+        "Permatang Pauh": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0002491856967410071
+        },
+        "Relau": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0005161703718206575
+        },
+        "Seberang Jaya": {
+            "Transactions": 49.0,
+            "Area_Transaction_Density": 0.0008721499385935247
+        },
+        "Simpang Ampat": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.004965914956481498
+        },
+        "Sungai Ara": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0024028620757168538
+        },
+        "Sungai Bakap": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.002313867184023637
+        },
+        "Sungai Dua": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.0007653560685616646
+        },
+        "Sungai Jawi": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.0019756865955894132
+        },
+        "Tanjong Tokong": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.0028478365341829378
+        },
+        "Tanjung Bungah": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0005161703718206575
+        },
+        "Tasek Gelugor": {
+            "Transactions": 29.0,
+            "Area_Transaction_Density": 0.011337949201715821
+        },
+        "Teluk Kumbar": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        }
+    },
+    "Johor": {
+        "Bakri": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0005695673068365876
+        },
+        "Batu Pahat": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.013171243970596087
+        },
+        "Gelang Patah": {
+            "Transactions": 24.0,
+            "Area_Transaction_Density": 0.00217147535731449
+        },
+        "Gerisek": {
+            "Transactions": 47.0,
+            "Area_Transaction_Density": 0.000836551981916238
+        },
+        "Iskandar Puteri (Nusajaya)": {
+            "Transactions": 18.5,
+            "Area_Transaction_Density": 0.023209867753590945
+        },
+        "Jementah": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0002847836534182938
+        },
+        "Johor Bahru": {
+            "Transactions": 20.0,
+            "Area_Transaction_Density": 0.027926597013331434
+        },
+        "Kluang": {
+            "Transactions": 34.0,
+            "Area_Transaction_Density": 0.021857145399854047
+        },
+        "Kota Tinggi": {
+            "Transactions": 49.5,
+            "Area_Transaction_Density": 0.007813751490664435
+        },
+        "Kulai": {
+            "Transactions": 32.0,
+            "Area_Transaction_Density": 0.022747094316786218
+        },
+        "Labis": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.00044497445846608405
+        },
+        "Masai": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.009273267714433191
+        },
+        "Mersing": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Muar": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.002794439599167008
+        },
+        "Pagoh": {
+            "Transactions": 156.0,
+            "Area_Transaction_Density": 0.0027766406208283643
+        },
+        "Paloh": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0002847836534182938
+        },
+        "Pasir Gudang": {
+            "Transactions": 43.0,
+            "Area_Transaction_Density": 0.022640300446754358
+        },
+        "Pengerang": {
+            "Transactions": 26.0,
+            "Area_Transaction_Density": 0.002954630404214798
+        },
+        "Perling": {
+            "Transactions": 39.0,
+            "Area_Transaction_Density": 0.0039513731911788265
+        },
+        "Permas Jaya": {
+            "Transactions": 18.0,
+            "Area_Transaction_Density": 0.006478828115266184
+        },
+        "Pontian": {
+            "Transactions": 16.5,
+            "Area_Transaction_Density": 0.000587366285175231
+        },
+        "Segamat": {
+            "Transactions": 28.5,
+            "Area_Transaction_Density": 0.0026342487941192175
+        },
+        "Senai": {
+            "Transactions": 20.0,
+            "Area_Transaction_Density": 0.004164960931242546
+        },
+        "Senggarang": {
+            "Transactions": 36.0,
+            "Area_Transaction_Density": 0.000640763220191161
+        },
+        "Simpang Rengam": {
+            "Transactions": 21.5,
+            "Area_Transaction_Density": 0.0007653560685616646
+        },
+        "Skudai": {
+            "Transactions": 28.0,
+            "Area_Transaction_Density": 0.03711086983607141
+        },
+        "Tampoi": {
+            "Transactions": 20.0,
+            "Area_Transaction_Density": 0.010981969634942954
+        },
+        "Tangkak": {
+            "Transactions": 20.0,
+            "Area_Transaction_Density": 0.0008899489169321681
+        },
+        "Tebrau": {
+            "Transactions": 21.5,
+            "Area_Transaction_Density": 0.03262552729473328
+        },
+        "Ulu Tiram": {
+            "Transactions": 28.0,
+            "Area_Transaction_Density": 0.013206841927273375
+        },
+        "Yong Peng": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0002491856967410071
+        }
+    },
+    "Perak": {
+        "Bagan Serai": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.000783155046900308
+        },
+        "Batu Gajah": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.0035241977110513855
+        },
+        "Batu Kurau": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Bidor": {
+            "Transactions": 27.0,
+            "Area_Transaction_Density": 0.0035063987327127425
+        },
+        "Chemor": {
+            "Transactions": 23.0,
+            "Area_Transaction_Density": 0.0047345282380791345
+        },
+        "Chenderiang": {
+            "Transactions": 414.0,
+            "Area_Transaction_Density": 0.007368777032198352
+        },
+        "Gerik": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        },
+        "Gopeng": {
+            "Transactions": 22.0,
+            "Area_Transaction_Density": 0.0018510937472189096
+        },
+        "Hutan Melintang": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.00033818058843422386
+        },
+        "Ipoh": {
+            "Transactions": 21.0,
+            "Area_Transaction_Density": 0.030792232525853017
+        },
+        "Kampar": {
+            "Transactions": 24.5,
+            "Area_Transaction_Density": 0.0033284089493263087
+        },
+        "Kamunting": {
+            "Transactions": 63.0,
+            "Area_Transaction_Density": 0.0011213356353345317
+        },
+        "Kuala Kangsar": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0005695673068365876
+        },
+        "Lahat": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0016909029421711193
+        },
+        "Lumut": {
+            "Transactions": 18.5,
+            "Area_Transaction_Density": 0.0025808518591032875
+        },
+        "Menglembu": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0006763611768684477
+        },
+        "Padang Rengas": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0002491856967410071
+        },
+        "Parit Buntar": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.001619707028816546
+        },
+        "Pengkalan Hulu": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0002491856967410071
+        },
+        "Pusing": {
+            "Transactions": 22.0,
+            "Area_Transaction_Density": 0.000391577523450154
+        },
+        "Seri Iskandar": {
+            "Transactions": 31.0,
+            "Area_Transaction_Density": 0.0048057241514337075
+        },
+        "Seri Manjong": {
+            "Transactions": 20.0,
+            "Area_Transaction_Density": 0.0003559795667728672
+        },
+        "Simpang": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Simpang Pulai": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0019400886389121265
+        },
+        "Sitiawan": {
+            "Transactions": 20.5,
+            "Area_Transaction_Density": 0.011676129790150045
+        },
+        "Sungai Siput": {
+            "Transactions": 22.5,
+            "Area_Transaction_Density": 0.0008009540252389513
+        },
+        "Taiping": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.0024028620757168538
+        },
+        "Tambun": {
+            "Transactions": 11.5,
+            "Area_Transaction_Density": 0.0015307121371233292
+        },
+        "Tanjong Tualang": {
+            "Transactions": 27.0,
+            "Area_Transaction_Density": 0.00048057241514337076
+        },
+        "Tapah": {
+            "Transactions": 199.0,
+            "Area_Transaction_Density": 0.007083993378780058
+        },
+        "Teluk Intan": {
+            "Transactions": 162.0,
+            "Area_Transaction_Density": 0.005766868981720449
+        },
+        "Tronoh": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0006763611768684477
+        },
+        "Ulu Bernam": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0018866917038961963
+        }
+    },
+    "Melaka": {
+        "Alor Gajah": {
+            "Transactions": 16.5,
+            "Area_Transaction_Density": 0.000587366285175231
+        },
+        "Ayer Molek": {
+            "Transactions": 34.0,
+            "Area_Transaction_Density": 0.0015485111154619725
+        },
+        "Bachang": {
+            "Transactions": 20.5,
+            "Area_Transaction_Density": 0.0007297581118843778
+        },
+        "Balai Panjang": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0010679387003186018
+        },
+        "Batu Berendam": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.0020112845522666997
+        },
+        "Bemban": {
+            "Transactions": 41.0,
+            "Area_Transaction_Density": 0.015057935674492285
+        },
+        "Bertam": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000391577523450154
+        },
+        "Bukit Baru": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.0010679387003186018
+        },
+        "Bukit Katil": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.004271754801274407
+        },
+        "Bukit Rambai": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.0009433458519480982
+        },
+        "Cheng": {
+            "Transactions": 26.0,
+            "Area_Transaction_Density": 0.0004627734368047274
+        },
+        "Durian Tunggal": {
+            "Transactions": 24.0,
+            "Area_Transaction_Density": 0.0018332947688802662
+        },
+        "Duyong": {
+            "Transactions": 21.0,
+            "Area_Transaction_Density": 0.0007475570902230212
+        },
+        "Jasin": {
+            "Transactions": 25.0,
+            "Area_Transaction_Density": 0.006443230158588897
+        },
+        "Klebang": {
+            "Transactions": 20.0,
+            "Area_Transaction_Density": 0.0003559795667728672
+        },
+        "Krubong": {
+            "Transactions": 24.0,
+            "Area_Transaction_Density": 0.002954630404214798
+        },
+        "Kuala Sungai Baru": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        },
+        "Masjid Tanah": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0008187530035775947
+        },
+        "Melaka City": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.002794439599167008
+        },
+        "Merlimau": {
+            "Transactions": 34.0,
+            "Area_Transaction_Density": 0.001726500898848406
+        },
+        "Paya Rumput": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0006763611768684477
+        },
+        "Sungai Rambai": {
+            "Transactions": 23.5,
+            "Area_Transaction_Density": 0.000836551981916238
+        },
+        "Sungai Udang": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0007297581118843778
+        },
+        "Sungei Baru Tengah": {
+            "Transactions": 10.5,
+            "Area_Transaction_Density": 0.0003737785451115106
+        },
+        "Sungei Petai": {
+            "Transactions": 76.0,
+            "Area_Transaction_Density": 0.002705444707473791
+        },
+        "Tanjong Kling": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0002491856967410071
+        },
+        "Tanjong Minyak": {
+            "Transactions": 24.5,
+            "Area_Transaction_Density": 0.0047523272164177776
+        },
+        "Umbai": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0002313867184023637
+        }
+    },
+    "Selangor": {
+        "Ampang": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.005909260808429596
+        },
+        "Ara Damansara": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.0017087019205097628
+        },
+        "Balakong": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0009967427869640283
+        },
+        "Bandar Kinrara": {
+            "Transactions": 25.0,
+            "Area_Transaction_Density": 0.0032038161009558053
+        },
+        "Bandar Puncak Alam": {
+            "Transactions": 18.5,
+            "Area_Transaction_Density": 0.002207073313991777
+        },
+        "Bandar Sri Damansara": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.0020112845522666997
+        },
+        "Bandar Sungai Long": {
+            "Transactions": 18.0,
+            "Area_Transaction_Density": 0.0024206610540554972
+        },
+        "Bandar Sunway": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.003097022230923945
+        },
+        "Bandar Utama": {
+            "Transactions": 25.0,
+            "Area_Transaction_Density": 0.0033284089493263087
+        },
+        "Bangi": {
+            "Transactions": 24.5,
+            "Area_Transaction_Density": 0.007333179075521065
+        },
+        "Banting": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0032216150792944483
+        },
+        "Batang Kali": {
+            "Transactions": 30.0,
+            "Area_Transaction_Density": 0.00206468148728263
+        },
+        "Batu Arang": {
+            "Transactions": 59.0,
+            "Area_Transaction_Density": 0.0010501397219799583
+        },
+        "Batu Caves": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0029368314258761546
+        },
+        "Beranang": {
+            "Transactions": 27.5,
+            "Area_Transaction_Density": 0.003630991581083246
+        },
+        "Cheras": {
+            "Transactions": 19.5,
+            "Area_Transaction_Density": 0.00863250449424203
+        },
+        "Cyberjaya": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0028300375558442947
+        },
+        "Damansara Damai": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0004983713934820142
+        },
+        "Damansara Perdana": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.002082480465621273
+        },
+        "Dengkil": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.005873662851752309
+        },
+        "Glenmarie": {
+            "Transactions": 16.5,
+            "Area_Transaction_Density": 0.000587366285175231
+        },
+        "Hulu Langat": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.00026698467507965044
+        },
+        "Hulu Selangor": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.00021358774006372035
+        },
+        "Ijok": {
+            "Transactions": 35.5,
+            "Area_Transaction_Density": 0.007083993378780058
+        },
+        "Jenjarom": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.0006051652635138743
+        },
+        "Kajang": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.009166473844401331
+        },
+        "Kapar": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.013598419450723528
+        },
+        "Kelana Jaya": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0005161703718206575
+        },
+        "Kepong": {
+            "Transactions": 19.5,
+            "Area_Transaction_Density": 0.0025452539024260006
+        },
+        "Klang": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.023316661623622805
+        },
+        "Kota Damansara": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.001566310093800616
+        },
+        "Kuala Kubu Baru": {
+            "Transactions": 23.0,
+            "Area_Transaction_Density": 0.00040937650178879734
+        },
+        "Kuala Selangor": {
+            "Transactions": 21.0,
+            "Area_Transaction_Density": 0.001085737678657245
+        },
+        "Mutiara Damansara": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Pandamaran": {
+            "Transactions": 18.0,
+            "Area_Transaction_Density": 0.000640763220191161
+        },
+        "Petaling Jaya": {
+            "Transactions": 17.5,
+            "Area_Transaction_Density": 0.0073865760105369955
+        },
+        "Port Klang": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0009789438086253849
+        },
+        "Puchong": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.013367032732321165
+        },
+        "Rasa": {
+            "Transactions": 32.0,
+            "Area_Transaction_Density": 0.0005695673068365876
+        },
+        "Rawang": {
+            "Transactions": 17.5,
+            "Area_Transaction_Density": 0.008917288147660324
+        },
+        "Sabak Bernam": {
+            "Transactions": 50.0,
+            "Area_Transaction_Density": 0.0008899489169321681
+        },
+        "Saujana": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0002313867184023637
+        },
+        "Saujana Utama": {
+            "Transactions": 30.0,
+            "Area_Transaction_Density": 0.0005339693501593009
+        },
+        "Selayang": {
+            "Transactions": 17.5,
+            "Area_Transaction_Density": 0.002919032447537511
+        },
+        "Semenyih": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.006372034245234324
+        },
+        "Sepang": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0033284089493263087
+        },
+        "Serendah": {
+            "Transactions": 21.5,
+            "Area_Transaction_Density": 0.014844347934428563
+        },
+        "Seri Kembangan": {
+            "Transactions": 22.5,
+            "Area_Transaction_Density": 0.005713472046704519
+        },
+        "Setia Alam": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.008490112667532884
+        },
+        "Shah Alam": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.022088532118256413
+        },
+        "Subang Jaya": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.011960913443568338
+        },
+        "Sungai Besar": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        },
+        "Sungai Buloh": {
+            "Transactions": 17.5,
+            "Area_Transaction_Density": 0.0025452539024260006
+        },
+        "Tanjong Duabelas": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.006994998487086841
+        },
+        "Telok Panglima Garang": {
+            "Transactions": 25.0,
+            "Area_Transaction_Density": 0.0030792232525853015
+        },
+        "Tropicana": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.000836551981916238
+        },
+        "Ulu Klang": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0023316661623622803
+        },
+        "Ulu Langat": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000391577523450154
+        }
+    },
+    "Negeri Sembilan": {
+        "Ampangan": {
+            "Transactions": 25.0,
+            "Area_Transaction_Density": 0.002563052880764644
+        },
+        "Bahau": {
+            "Transactions": 25.5,
+            "Area_Transaction_Density": 0.00206468148728263
+        },
+        "Bandar Enstek": {
+            "Transactions": 23.0,
+            "Area_Transaction_Density": 0.00040937650178879734
+        },
+        "Bandar Sri Sendayan": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0023316661623622803
+        },
+        "Bukit Kepayang": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.000783155046900308
+        },
+        "Gemas": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0003559795667728672
+        },
+        "Jimah": {
+            "Transactions": 58.0,
+            "Area_Transaction_Density": 0.0038267803428083226
+        },
+        "Juasseh": {
+            "Transactions": 25.5,
+            "Area_Transaction_Density": 0.0009077478952708115
+        },
+        "Kuala Pilah": {
+            "Transactions": 41.0,
+            "Area_Transaction_Density": 0.0014595162237687556
+        },
+        "Labu": {
+            "Transactions": 48.0,
+            "Area_Transaction_Density": 0.008970685082676254
+        },
+        "Lenggeng": {
+            "Transactions": 53.0,
+            "Area_Transaction_Density": 0.004004770126194756
+        },
+        "Linggi": {
+            "Transactions": 66.0,
+            "Area_Transaction_Density": 0.001174732570350462
+        },
+        "Lukut": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0012459284837050353
+        },
+        "Mantin": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0011035366569958885
+        },
+        "Nilai": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.008169731057437303
+        },
+        "Paroi": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.00021358774006372035
+        },
+        "Pasir Panjang": {
+            "Transactions": 72.0,
+            "Area_Transaction_Density": 0.003008027339230728
+        },
+        "Port Dickson": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0034708007760354555
+        },
+        "Rantau": {
+            "Transactions": 23.0,
+            "Area_Transaction_Density": 0.004485342541338127
+        },
+        "Rasah": {
+            "Transactions": 22.0,
+            "Area_Transaction_Density": 0.0033818058843422386
+        },
+        "Rembau": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Senawang": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.001477315202107399
+        },
+        "Seremban": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0030792232525853015
+        },
+        "Seremban 2": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.0027588416424897213
+        },
+        "Sikamat": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0012637274620436788
+        },
+        "Simpang Pertang": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.00021358774006372035
+        },
+        "Tampin": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0019934855739280567
+        },
+        "Telok Kemang": {
+            "Transactions": 35.5,
+            "Area_Transaction_Density": 0.0012637274620436788
+        }
+    },
+    "Kedah": {
+        "Alor Setar": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0017976968122029795
+        },
+        "Bandar Baharu": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        },
+        "Bedong": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0004983713934820142
+        },
+        "Gurun": {
+            "Transactions": 24.5,
+            "Area_Transaction_Density": 0.002474057989071427
+        },
+        "Jitra": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0012103305270277486
+        },
+        "Kota Sarang Semut": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        },
+        "Kuah": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0004983713934820142
+        },
+        "Kuala Kedah": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.0012103305270277486
+        },
+        "Kuala Ketil": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.0005517683284979442
+        },
+        "Kulim": {
+            "Transactions": 16.5,
+            "Area_Transaction_Density": 0.004431945606322197
+        },
+        "Lunas": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.00211807842229856
+        },
+        "Merbok": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.00030258263175693715
+        },
+        "Padang Serai": {
+            "Transactions": 46.0,
+            "Area_Transaction_Density": 0.005855863873413666
+        },
+        "Pokok Sena": {
+            "Transactions": 10.5,
+            "Area_Transaction_Density": 0.0003737785451115106
+        },
+        "Sungai Lalang": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0012637274620436788
+        },
+        "Sungai Petani": {
+            "Transactions": 28.0,
+            "Area_Transaction_Density": 0.023601445277041097
+        },
+        "Teloi Kiri": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0004627734368047274
+        }
+    },
+    "Kuala Lumpur": {
+        "Ampang": {
+            "Transactions": 11.5,
+            "Area_Transaction_Density": 0.00040937650178879734
+        },
+        "Ampang Hilir": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Bandar Menjalara": {
+            "Transactions": 17.5,
+            "Area_Transaction_Density": 0.0006229642418525177
+        },
+        "Bandar Tasik Selatan": {
+            "Transactions": 20.5,
+            "Area_Transaction_Density": 0.0007297581118843778
+        },
+        "Bangsar": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0009077478952708115
+        },
+        "Batu Caves": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.0008721499385935247
+        },
+        "Brickfields": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.00021358774006372035
+        },
+        "Bukit Bintang": {
+            "Transactions": 11.5,
+            "Area_Transaction_Density": 0.0022782692273463504
+        },
+        "Bukit Jalil": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.002794439599167008
+        },
+        "Cheras": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.007493369880568855
+        },
+        "City Centre": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Damansara Heights": {
+            "Transactions": 51.0,
+            "Area_Transaction_Density": 0.0009077478952708115
+        },
+        "Desa ParkCity": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0009611448302867415
+        },
+        "Desa Petaling": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0005161703718206575
+        },
+        "Dutamas": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0011213356353345317
+        },
+        "Jalan Ipoh": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0002847836534182938
+        },
+        "Jalan Klang Lama (Old Klang Road)": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.004948115978142854
+        },
+        "Jalan Kuching": {
+            "Transactions": 38.0,
+            "Area_Transaction_Density": 0.0026342487941192175
+        },
+        "Jinjang": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.00044497445846608405
+        },
+        "KL City": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.00026698467507965044
+        },
+        "KL Sentral": {
+            "Transactions": 21.0,
+            "Area_Transaction_Density": 0.0003737785451115106
+        },
+        "KLCC": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0024384600323941407
+        },
+        "Kampung Kerinchi (Bangsar South)": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0006763611768684477
+        },
+        "Kepong": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0028300375558442947
+        },
+        "Kuchai Lama": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.0005517683284979442
+        },
+        "Mont Kiara": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.004200558887919833
+        },
+        "Pantai": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0005339693501593009
+        },
+        "Salak Selatan": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.00026698467507965044
+        },
+        "Segambut": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.0012459284837050353
+        },
+        "Sentul": {
+            "Transactions": 13.5,
+            "Area_Transaction_Density": 0.001619707028816546
+        },
+        "Setapak": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.004503141519676771
+        },
+        "Setiawangsa": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0002847836534182938
+        },
+        "Sri Hartamas": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        },
+        "Sri Petaling": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.0024918569674100706
+        },
+        "Sungai Besi": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.0010679387003186018
+        },
+        "Taman Desa": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.0019578876172507698
+        },
+        "Taman Tun Dr Ismail": {
+            "Transactions": 39.0,
+            "Area_Transaction_Density": 0.0013883203104141822
+        },
+        "Wangsa Maju": {
+            "Transactions": 21.5,
+            "Area_Transaction_Density": 0.004378548671306267
+        }
+    },
+    "Pahang": {
+        "Bentong": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.0009077478952708115
+        },
+        "Chenor": {
+            "Transactions": 11.0,
+            "Area_Transaction_Density": 0.000195788761725077
+        },
+        "Genting Highlands": {
+            "Transactions": 13.5,
+            "Area_Transaction_Density": 0.00048057241514337076
+        },
+        "Hulu Lepar": {
+            "Transactions": 30.0,
+            "Area_Transaction_Density": 0.0005339693501593009
+        },
+        "Kuala Lipis": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.001370521332075539
+        },
+        "Kuantan": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.014523966324332983
+        },
+        "Mentakab": {
+            "Transactions": 12.5,
+            "Area_Transaction_Density": 0.00206468148728263
+        },
+        "Pekan": {
+            "Transactions": 11.5,
+            "Area_Transaction_Density": 0.00040937650178879734
+        },
+        "Raub": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.0015841090721392592
+        },
+        "Rompin": {
+            "Transactions": 18.0,
+            "Area_Transaction_Density": 0.0003203816100955805
+        },
+        "Sungai Karang": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.0015307121371233292
+        },
+        "Teras": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.00026698467507965044
+        },
+        "Triang": {
+            "Transactions": 13.5,
+            "Area_Transaction_Density": 0.00048057241514337076
+        }
+    },
+    "Terengganu": {
+        "Besut": {
+            "Transactions": 21.0,
+            "Area_Transaction_Density": 0.0003737785451115106
+        },
+        "Dungun": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0004983713934820142
+        },
+        "Hulu Terengganu": {
+            "Transactions": 53.0,
+            "Area_Transaction_Density": 0.0009433458519480982
+        },
+        "Kemaman": {
+            "Transactions": 14.5,
+            "Area_Transaction_Density": 0.0005161703718206575
+        },
+        "Kerteh": {
+            "Transactions": 24.5,
+            "Area_Transaction_Density": 0.0008721499385935247
+        },
+        "Kijal": {
+            "Transactions": 55.5,
+            "Area_Transaction_Density": 0.0019756865955894132
+        },
+        "Kuala Ibai": {
+            "Transactions": 26.0,
+            "Area_Transaction_Density": 0.0004627734368047274
+        },
+        "Kuala Terengganu": {
+            "Transactions": 28.0,
+            "Area_Transaction_Density": 0.0004983713934820142
+        }
+    },
+    "Sarawak": {
+        "Bintulu": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0009967427869640283
+        },
+        "Kota Samarahan": {
+            "Transactions": 16.5,
+            "Area_Transaction_Density": 0.0039157752345015395
+        },
+        "Kuching": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.0073865760105369955
+        },
+        "Limbang": {
+            "Transactions": 12.0,
+            "Area_Transaction_Density": 0.00021358774006372035
+        },
+        "Miri": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0019578876172507698
+        },
+        "Sibu": {
+            "Transactions": 17.0,
+            "Area_Transaction_Density": 0.0025274549240873576
+        },
+        "Sri Aman": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        }
+    },
+    "Sabah": {
+        "Kota Kinabalu": {
+            "Transactions": 15.5,
+            "Area_Transaction_Density": 0.0030614242742466585
+        },
+        "Kota Marudu": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0002491856967410071
+        },
+        "Lahad Datu": {
+            "Transactions": 14.0,
+            "Area_Transaction_Density": 0.0007297581118843778
+        },
+        "Papar": {
+            "Transactions": 33.5,
+            "Area_Transaction_Density": 0.0011925315486891051
+        },
+        "Penampang": {
+            "Transactions": 16.0,
+            "Area_Transaction_Density": 0.002563052880764644
+        },
+        "Sandakan": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.0021002794439599166
+        },
+        "Tawau": {
+            "Transactions": 19.0,
+            "Area_Transaction_Density": 0.0019044906822348398
+        },
+        "Tuaran": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0010145417653026716
+        }
+    },
+    "Perlis": {
+        "Arau": {
+            "Transactions": 29.0,
+            "Area_Transaction_Density": 0.0005161703718206575
+        }
+    },
+    "Labuan": {
+        "Labuan": {
+            "Transactions": 25.0,
+            "Area_Transaction_Density": 0.00044497445846608405
+        }
+    },
+    "Putrajaya": {
+        "Putrajaya": {
+            "Transactions": 18.0,
+            "Area_Transaction_Density": 0.0008543509602548814
+        }
+    },
+    "Kelantan": {
+        "Cherang Ruku": {
+            "Transactions": 13.0,
+            "Area_Transaction_Density": 0.0002313867184023637
+        },
+        "Machang": {
+            "Transactions": 10.0,
+            "Area_Transaction_Density": 0.0001779897833864336
+        },
+        "Padang Enggang": {
+            "Transactions": 15.0,
+            "Area_Transaction_Density": 0.00026698467507965044
+        }
+    }
+}
