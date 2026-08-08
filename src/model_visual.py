@@ -121,7 +121,9 @@ def main():
             metrics_data = json.load(f)
 
         df_metrics = pd.DataFrame(metrics_data).T
-        wrapped_labels = [textwrap.fill(str(label), width=12) for label in df_metrics.index]
+        wrapped_labels = [
+            textwrap.fill(str(label), width=12) for label in df_metrics.index
+        ]
 
         # Chart: R² Comparison (Train vs Test side-by-side)
         import numpy as np
