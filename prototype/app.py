@@ -3,9 +3,17 @@ import pandas as pd
 import numpy as np
 import joblib
 import json
+import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+# Reuse the existing training-side helpers (imported only, never modified)
+# so the live test split below matches exactly what was used at training time.
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from src.data_preprocessing import run_preprocessing_pipeline
+from src.utils import load_raw_dataset, split_dataset
 
 # 1. CONFIGURATION & CORE LAYOUT
 st.set_page_config(page_title="Housing Model Predictor", page_icon="🏠", layout="wide")
@@ -42,15 +50,83 @@ def load_models():
 
 
 @st.cache_data
-def load_state_area_lookup():
-    """Loads the hierarchical State -> Area -> Features lookup table."""
+def load_area_frequencies():
+    """Area counts from the cleaned training data, used to warn users when a
+    typed-in Area is rare or unseen in training."""
     project_root = Path(__file__).resolve().parent.parent
-    lookup_path = project_root / "data" / "processed" / "state_area_lookup_table.json"
+    data_path = (
+        project_root / "data" / "processed" / "cleaned_malaysia_house_prices.csv"
+    )
+    if not data_path.exists():
+        return None
+    df = pd.read_csv(data_path)
+    if "Area" not in df.columns:
+        return None
+    return df["Area"].value_counts()
 
-    if lookup_path.exists():
-        with open(lookup_path, "r") as f:
-            return json.load(f)
-    return {}
+
+def _normalize_model_name(name: str) -> str:
+    """'Random Forest Regression' and 'Random Forest' (as used inconsistently
+    between prototype/app.py's `models` dict and report_assets/metrics.json)
+    should be treated as the same model when joining data by name."""
+    return name.replace(" Regression", "").strip().lower()
+
+
+@st.cache_data
+def compute_live_rm_metrics(_models):
+    """
+    Computes real ringgit-scale MAE/RMSE for each loaded model by predicting
+    on the same held-out test split used at training time (same
+    preprocessing pipeline, same categorical/numerical/type feature setup,
+    same random_state=42 in split_dataset), entirely at Streamlit runtime.
+
+    This exists because report_assets/metrics.json stores MAE/RMSE in
+    log1p-transformed price space (by design, matching the training loss),
+    not real ringgit — and regenerating it in RM would require retraining
+    all four models. Recomputing live from the already-trained .pkl files
+    avoids that, without touching src/utils.py or metrics.json.
+
+    `_models` is prefixed with underscore so Streamlit's cache doesn't try
+    to hash the (unhashable) sklearn model objects.
+    """
+    project_root = Path(__file__).resolve().parent.parent
+    try:
+        df = load_raw_dataset(project_root)
+        df = run_preprocessing_pipeline(df)
+    except Exception:
+        return {}
+
+    categorical_features = ["Area", "State", "Tenure"]
+    numerical_features = ["Transactions", "Log_Estimated_Size"]
+    if "Area_Transaction_Density" in df.columns:
+        numerical_features.append("Area_Transaction_Density")
+    type_features = [c for c in df.columns if c.startswith("Type_")]
+
+    try:
+        X_train, X_test, y_train, y_test = split_dataset(
+            df, categorical_features, numerical_features, type_features
+        )
+    except Exception:
+        return {}
+
+    results = {}
+    for m_name, m_obj in _models.items():
+        try:
+            y_train_pred = m_obj.predict(X_train)
+            y_test_pred = m_obj.predict(X_test)
+            results[m_name] = {
+                "train_mae_rm": mean_absolute_error(y_train, y_train_pred),
+                "test_mae_rm": mean_absolute_error(y_test, y_test_pred),
+                "train_rmse_rm": float(
+                    np.sqrt(mean_squared_error(y_train, y_train_pred))
+                ),
+                "test_rmse_rm": float(
+                    np.sqrt(mean_squared_error(y_test, y_test_pred))
+                ),
+            }
+        except Exception:
+            continue
+    return results
 
 
 @st.cache_data
@@ -63,17 +139,14 @@ def load_raw_data():
     return pd.read_csv(data_path)
 
 
-# FIXED: Added script_hint parameter here to solve the TypeError
-def show_image_if_exists(
-    path: Path, caption: str = None, script_hint: str = "src/eda.py"
-):
+def show_image_if_exists(path: Path, caption: str = None):
     """Display a saved plot if it exists, otherwise show a clear message
     instead of silently failing or crashing the tab."""
     if path.exists():
         st.image(str(path), caption=caption, use_container_width=True)
     else:
         st.caption(
-            f"⚠️ Plot not found: `{path.name}`. Run `python {script_hint}` to generate it."
+            f"⚠️ Plot not found: `{path.name}`. Run `python src/eda.py` to generate it."
         )
 
 
@@ -87,13 +160,18 @@ def _count_iqr_outliers(series: pd.Series) -> int:
 
 # ---------------------------------------------------------
 # Pipeline introspection helpers
+#
+# These walk into the fitted model (which may be wrapped in a
+# TransformedTargetRegressor, then a Pipeline, then a ColumnTransformer)
+# to recover exactly what the model expects, instead of hardcoding
+# feature lists that can silently drift out of sync with training code.
 # ---------------------------------------------------------
 
 
 def _unwrap_column_transformer(model):
     """Return the fitted ColumnTransformer inside a model pipeline, if any."""
     candidate = model
-    if hasattr(candidate, "regressor_"):
+    if hasattr(candidate, "regressor_"):  # fitted TransformedTargetRegressor
         candidate = candidate.regressor_
     elif hasattr(candidate, "regressor"):
         candidate = candidate.regressor
@@ -151,9 +229,16 @@ def _get_onehot_categories(model, raw_col_name):
 
 
 def resolve_area_category(model, area_name, state_name):
+    """
+    Training buckets rare Areas into 'Other_<State>'. Mirror that here so a
+    typed-in Area the model never saw doesn't silently get zeroed out by
+    OneHotEncoder(handle_unknown='ignore') without the user knowing.
+
+    Returns (resolved_area, was_remapped).
+    """
     known_areas = _get_onehot_categories(model, "Area")
     if known_areas is None:
-        return area_name, False
+        return area_name, False  # can't verify — pass through as-is
 
     if area_name in known_areas:
         return area_name, False
@@ -162,7 +247,7 @@ def resolve_area_category(model, area_name, state_name):
     if fallback in known_areas:
         return fallback, True
 
-    return area_name, True
+    return area_name, True  # still unresolved, encoder will zero it out
 
 
 # ---------------------------------------------------------
@@ -170,32 +255,24 @@ def resolve_area_category(model, area_name, state_name):
 # ---------------------------------------------------------
 
 
-def prepare_input_features(
-    raw_input: dict, expected_columns: list, state_area_lookup: dict
-):
+def prepare_input_features(raw_input: dict, expected_columns: list):
+    """
+    Build a single-row DataFrame matching exactly what the trained
+    preprocessor expects (pulled live from the model via `feature_names_in_`),
+    so this never drifts out of sync with the training script again.
+
+    Returns (df, notes) — notes describes any columns that had to be
+    auto-derived or defaulted.
+    """
     notes = []
     row = {}
 
+    # Direct raw fields (Area, State, Tenure, Transactions, ...)
     for col in expected_columns:
         if col in raw_input:
             row[col] = raw_input[col]
 
-    selected_state = raw_input.get("State", "")
-    selected_area = raw_input.get("Area", "")
-
-    area_data = state_area_lookup.get(selected_state, {}).get(selected_area, {})
-
-    if "Transactions" in expected_columns:
-        if "Transactions" in raw_input:
-            row["Transactions"] = raw_input["Transactions"]
-        else:
-            row["Transactions"] = area_data.get("Transactions", 16.0)
-
-    if "Area_Transaction_Density" in expected_columns:
-        row["Area_Transaction_Density"] = area_data.get(
-            "Area_Transaction_Density", 0.005
-        )
-
+    # Type_* multi-hot columns, derived from the raw "Type" selection
     type_cols = [c for c in expected_columns if c.startswith("Type_")]
     if type_cols and "Type" in raw_input:
         selected_types = [t.strip() for t in str(raw_input["Type"]).split(",")]
@@ -203,6 +280,8 @@ def prepare_input_features(
             raw_type_name = col.replace("Type_", "")
             row[col] = 1 if raw_type_name in selected_types else 0
 
+    # Any remaining expected column: try to auto-derive Log_X from X,
+    # otherwise fall back to a safe default and flag it.
     for col in expected_columns:
         if col in row:
             continue
@@ -220,10 +299,15 @@ def prepare_input_features(
     return df, notes
 
 
-def predict_price(model, raw_input: dict, state_area_lookup: dict):
+def predict_price(model, raw_input: dict):
+    """Predict price and return (prediction, notes) where notes are
+    user-facing caveats about the prediction's reliability."""
     expected_columns = get_expected_columns(model)
     if expected_columns is None:
-        raise ValueError("Unable to read expected feature columns from the model.")
+        raise ValueError(
+            "Unable to read expected feature columns from the model (missing feature_names_in_)."
+            "Please confirm the model is trained and saved using a more recent version of the pipeline."
+        )
 
     notes = []
     working_input = dict(raw_input)
@@ -235,13 +319,11 @@ def predict_price(model, raw_input: dict, state_area_lookup: dict):
         if remapped:
             notes.append(
                 f"'{working_input['Area']}' not in training data's known areas, "
-                f"reverted to using '{resolved_area}' (state-level estimate)."
+                f"reverted to using '{resolved_area}' (state-level estimate), prediction accuracy may be compromised."
             )
         working_input["Area"] = resolved_area
 
-    df, fill_notes = prepare_input_features(
-        working_input, expected_columns, state_area_lookup
-    )
+    df, fill_notes = prepare_input_features(working_input, expected_columns)
     notes.extend(fill_notes)
 
     pred = float(model.predict(df)[0])
@@ -249,11 +331,12 @@ def predict_price(model, raw_input: dict, state_area_lookup: dict):
 
 
 def area_reliability_note(area_freq, area_name, threshold=5):
+    """Extra warning based on how many training rows actually back this Area."""
     if area_freq is None:
         return None
     count = int(area_freq.get(area_name, 0))
     if count == 0:
-        return None
+        return None  # already covered by resolve_area_category's note
     if count < threshold:
         return f"Note: Training data only has {count} records for '{area_name}', prediction stability may be compromised."
     return None
@@ -264,7 +347,9 @@ def area_reliability_note(area_freq, area_name, threshold=5):
 # ---------------------------------------------------------
 
 
-def explain_tree_prediction(model, raw_input: dict, state_area_lookup: dict):
+def explain_tree_prediction(model, raw_input: dict):
+    """Best-effort SHAP waterfall for tree-based models. Returns a matplotlib
+    figure, or None if unavailable (missing shap, or non-tree model)."""
     try:
         import shap
     except ImportError:
@@ -289,7 +374,7 @@ def explain_tree_prediction(model, raw_input: dict, state_area_lookup: dict):
         )
         working_input["Area"] = resolved_area
 
-    df, _ = prepare_input_features(working_input, expected_columns, state_area_lookup)
+    df, _ = prepare_input_features(working_input, expected_columns)
 
     try:
         X_transformed = ct.transform(df)
@@ -368,18 +453,10 @@ def plot_market_comparison(state, prop_type, predicted_price, title="Market Benc
 
 
 def render_input_form(form_key):
-    state_area_lookup = load_state_area_lookup()
-
-    available_states = sorted(list(state_area_lookup.keys()))
-    if not available_states:
-        available_states = ["Selangor", "Kuala Lumpur", "Johor", "Penang"]
-
+    """Renders the common property feature input form."""
     st.info(
         "💡 **Tip:** Use a preset below to auto-fill the form, or enter your own custom details."
     )
-
-    preset_key = f"preset_{form_key}"
-
     preset_choice = st.selectbox(
         "Auto Input Data (Optional):",
         [
@@ -388,7 +465,7 @@ def render_input_form(form_key):
             "Sample: Standard Terrace in Johor",
             "Sample: Affordable Flat in Penang",
         ],
-        key=preset_key,
+        key=f"preset_{form_key}",
     )
 
     (
@@ -403,7 +480,7 @@ def render_input_form(form_key):
         "",
         "Freehold",
         "Terrace House",
-        16,
+        10,
         1200,
     )
 
@@ -456,114 +533,95 @@ def render_input_form(form_key):
             750,
         )
 
-    state_widget_key = f"state_{form_key}"
-    area_widget_key = f"area_{form_key}"
-    tenure_widget_key = f"tenure_{form_key}"
-    type_widget_key = f"type_{form_key}"
-    size_widget_key = f"size_{form_key}"
-    chk_tx_key = f"chk_tx_{form_key}"
-    man_tx_key = f"man_tx_{form_key}"
-
-    if preset_choice != "Custom Input (Manual)":
-        st.session_state[state_widget_key] = default_state
-        areas_in_preset_state = sorted(
-            list(state_area_lookup.get(default_state, {}).keys())
-        )
-        if default_area in areas_in_preset_state:
-            st.session_state[area_widget_key] = default_area
-        st.session_state[tenure_widget_key] = default_tenure
-        st.session_state[type_widget_key] = default_type
-        st.session_state[size_widget_key] = default_size
-        st.session_state[chk_tx_key] = False
-        st.session_state[man_tx_key] = default_tx
-
-    st.subheader("Property Features")
-    col1, col2 = st.columns(2)
-
-    with col1:
-        state = st.selectbox("State", options=available_states, key=state_widget_key)
-
-        areas_in_state = sorted(list(state_area_lookup.get(state, {}).keys()))
-        if not areas_in_state:
-            areas_in_state = ["Insufficient historical data available"]
-
-        area = st.selectbox(
-            "Area / Township",
-            options=areas_in_state,
-            key=area_widget_key,
-            help="Select the specific town or neighborhood.",
-        )
-
-        tenure_options = ["Freehold", "Leasehold", "Freehold and Leasehold"]
-        tenure = st.selectbox(
-            "Tenure",
-            options=tenure_options,
-            key=tenure_widget_key,
-            help="Freehold = Ownership of land. Leasehold = Leased for a set period (e.g., 99 years).",
-        )
-
-    with col2:
-        type_options = [
-            "Terrace House",
-            "Condominium",
-            "Apartment",
-            "Semi D",
-            "Bungalow",
-            "Service Residence",
-            "Flat",
-            "Cluster House",
-            "Town House",
-        ]
-        prop_type = st.selectbox(
-            "Property Type",
-            options=type_options,
-            key=type_widget_key,
-            help="The architectural style or classification of the property.",
-        )
-
-        estimated_size = st.number_input(
-            "Estimated Built-up Size (sqft)",
-            min_value=200,
-            max_value=20000,
-            step=50,
-            key=size_widget_key,
-            help="A manual estimate of the property's floor space in square feet.",
-        )
-
-        use_default_tx = st.checkbox(
-            "Auto-fill Transactions based on Area",
-            key=chk_tx_key,
-            help="Uncheck this to manually input a specific number of historical transactions.",
-        )
-        st.caption(
-            "ℹ️ **Tip:** Transactions will be automatically mapped based on historical data matching your selected state and area."
-        )
-
-        if not use_default_tx:
-            manual_tx = st.number_input(
-                "Number of Transactions", min_value=0, max_value=5000, key=man_tx_key
-            )
-        else:
-            manual_tx = None
-
-    submitted = st.button(
-        "Predict Price", use_container_width=True, key=f"btn_{form_key}"
-    )
-
     user_features = None
-    if submitted:
-        user_features = {
-            "Area": area,
-            "State": state,
-            "Tenure": tenure,
-            "Type": prop_type,
-            "Estimated_Size": estimated_size,
-        }
+    with st.form(form_key):
+        st.subheader("Property Features")
+        col1, col2 = st.columns(2)
 
-        if manual_tx is not None:
-            user_features["Transactions"] = manual_tx
+        with col1:
+            state_options = [
+                "Kuala Lumpur",
+                "Selangor",
+                "Johor",
+                "Penang",
+                "Perak",
+                "Negeri Sembilan",
+                "Melaka",
+                "Kedah",
+                "Pahang",
+                "Terengganu",
+                "Kelantan",
+                "Perlis",
+                "Sabah",
+                "Sarawak",
+            ]
+            state = st.selectbox(
+                "State", options=state_options, index=state_options.index(default_state)
+            )
+            area = st.text_input(
+                "Area / Township",
+                value=default_area,
+                placeholder="e.g., Cheras, Skudai",
+            )
+            tenure = st.selectbox(
+                "Tenure",
+                options=["Freehold", "Leasehold", "Freehold and Leasehold"],
+                index=(
+                    0
+                    if default_tenure == "Freehold"
+                    else (1 if default_tenure == "Leasehold" else 2)
+                ),
+            )
 
-    return user_features, state_area_lookup
+        with col2:
+            type_options = [
+                "Terrace House",
+                "Condominium",
+                "Apartment",
+                "Semi D",
+                "Bungalow",
+                "Service Residence",
+                "Flat",
+                "Cluster House",
+                "Town House",
+            ]
+            prop_type = st.selectbox(
+                "Property Type",
+                options=type_options,
+                index=type_options.index(default_type),
+            )
+            transactions = st.number_input(
+                "Number of Transactions", min_value=1, value=default_tx
+            )
+            estimated_size = st.number_input(
+                "Estimated Built-up Size (sqft)",
+                min_value=200,
+                max_value=20000,
+                value=default_size,
+                step=50,
+                help="Estimated built-up size of the property (square feet). This is a manual estimate, not an exact measurement.",
+            )
+            st.caption(
+                "⚠️ This value is a manual estimate, and the model was trained using area derived from prices. "
+                "There may be differences between the manual estimate and the training distribution, and the prediction should be taken as a reference only. "
+            )
+
+        submitted = st.form_submit_button("Predict Price", use_container_width=True)
+
+        if submitted:
+            if not area.strip():
+                st.warning("Please enter an Area or Township name before submitting.")
+            else:
+                user_features = {
+                    "Area": area.strip().title(),
+                    "State": state,
+                    "Tenure": tenure,
+                    "Type": prop_type,
+                    "Transactions": transactions,
+                    "Estimated_Size": estimated_size,
+                }
+
+    return user_features
 
 
 # =========================================================
@@ -575,8 +633,7 @@ def main():
     st.title("🏠 Malaysia Housing Price Predictor")
 
     models = load_models()
-    raw_df = load_raw_data()
-    area_freq = raw_df["Area"].value_counts().to_dict() if raw_df is not None else {}
+    area_freq = load_area_frequencies()
 
     if not models:
         st.error(
@@ -600,13 +657,11 @@ def main():
         selected_model_name = st.selectbox("Select Model to Use:", list(models.keys()))
         selected_model = models[selected_model_name]
 
-        user_features, state_area_lookup = render_input_form("single_prediction_form")
+        user_features = render_input_form("single_prediction_form")
 
         if user_features:
             try:
-                pred, notes = predict_price(
-                    selected_model, user_features, state_area_lookup
-                )
+                pred, notes = predict_price(selected_model, user_features)
 
                 st.success("Analysis Complete!")
                 st.metric(
@@ -614,9 +669,7 @@ def main():
                     value=f"RM {pred:,.2f}",
                 )
 
-                area_note = area_reliability_note(
-                    area_freq, user_features["Area"], threshold=5
-                )
+                area_note = area_reliability_note(area_freq, user_features["Area"])
                 if area_note:
                     notes.append(area_note)
 
@@ -631,9 +684,7 @@ def main():
                     title=f"Market Benchmark ({selected_model_name})",
                 )
 
-                shap_fig = explain_tree_prediction(
-                    selected_model, user_features, state_area_lookup
-                )
+                shap_fig = explain_tree_prediction(selected_model, user_features)
                 if shap_fig is not None:
                     with st.expander("🔍 Why? (SHAP Explanation)"):
                         st.caption(
@@ -656,7 +707,7 @@ def main():
                 "You need at least 2 models trained to compare. Currently only one model is loaded."
             )
 
-        comp_features, comp_state_area_lookup = render_input_form("comparison_form")
+        comp_features = render_input_form("comparison_form")
 
         if comp_features:
             st.markdown("### Prediction Results")
@@ -666,9 +717,7 @@ def main():
             all_notes = {}
             for idx, (m_name, m_obj) in enumerate(models.items()):
                 try:
-                    pred, notes = predict_price(
-                        m_obj, comp_features, comp_state_area_lookup
-                    )
+                    pred, notes = predict_price(m_obj, comp_features)
                     predictions[m_name] = pred
                     all_notes[m_name] = notes
                     cols[idx].metric(label=m_name, value=f"RM {pred:,.2f}")
@@ -696,21 +745,13 @@ def main():
                     plt.FuncFormatter(lambda x, p: format(int(x), ","))
                 )
 
-                wrapped_labels = [
-                    label.replace(" ", "\n") for label in predictions.keys()
-                ]
-                ax.set_xticklabels(wrapped_labels)
-
-                max_pred = max(predictions.values())
-                ax.set_ylim(0, max_pred * 1.25)
-
                 for p in ax.patches:
                     ax.annotate(
                         f"RM {p.get_height():,.0f}",
                         (p.get_x() + p.get_width() / 2.0, p.get_height()),
                         ha="center",
                         va="bottom",
-                        xytext=(0, 6),
+                        xytext=(0, 5),
                         textcoords="offset points",
                     )
 
@@ -724,7 +765,6 @@ def main():
         current_path = Path(__file__).resolve().parent
         project_root = current_path.parent
         metrics_path = project_root / "report_assets" / "metrics.json"
-        plots_dir = project_root / "report_assets" / "plots"
 
         if not metrics_path.exists():
             st.info(
@@ -760,6 +800,27 @@ def main():
 
                 metrics_df["gap_r2"] = metrics_df["train_r2"] - metrics_df["test_r2"]
 
+                # metrics.json's own train_mae/test_mae/train_rmse/test_rmse are
+                # log1p-scale (by design — see src/utils.py, unmodified). To show
+                # real ringgit values without retraining, compute them live here
+                # from the already-trained models against the same test split.
+                live_rm = compute_live_rm_metrics(models)
+                live_rm_by_norm_name = {
+                    _normalize_model_name(k): v for k, v in live_rm.items()
+                }
+                for col in [
+                    "train_mae_rm",
+                    "test_mae_rm",
+                    "train_rmse_rm",
+                    "test_rmse_rm",
+                ]:
+                    metrics_df[col] = [
+                        live_rm_by_norm_name.get(_normalize_model_name(idx), {}).get(
+                            col, np.nan
+                        )
+                        for idx in metrics_df.index
+                    ]
+
                 st.markdown("### Metrics Comparison Table")
                 display_df = metrics_df.copy()
                 display_df["train_r2"] = display_df["train_r2"].map(
@@ -772,6 +833,18 @@ def main():
                     lambda x: f"{x:.4f}" if pd.notna(x) else "—"
                 )
 
+                # Real RM-scale MAE/RMSE, computed live above.
+                for col in [
+                    "train_mae_rm",
+                    "test_mae_rm",
+                    "train_rmse_rm",
+                    "test_rmse_rm",
+                ]:
+                    display_df[col] = display_df[col].map(
+                        lambda x: f"RM {x:,.2f}" if pd.notna(x) else "—"
+                    )
+
+                # metrics.json's original fields — log1p-scale.
                 for col in ["train_mae", "test_mae", "train_rmse", "test_rmse"]:
                     display_df[col] = display_df[col].map(
                         lambda x: f"{x:.4f}" if pd.notna(x) else "—"
@@ -787,10 +860,14 @@ def main():
                         "train_r2": "Train R²",
                         "test_r2": "Test R²",
                         "gap_r2": "Gap Test R²",
-                        "train_mae": "Train MAE",
-                        "test_mae": "Test MAE",
-                        "train_rmse": "Train RMSE",
-                        "test_rmse": "Test RMSE",
+                        "train_mae_rm": "Train MAE",
+                        "test_mae_rm": "Test MAE",
+                        "train_rmse_rm": "Train RMSE",
+                        "test_rmse_rm": "Test RMSE",
+                        "train_mae": "Train MAE (log)",
+                        "test_mae": "Test MAE (log)",
+                        "train_rmse": "Train RMSE (log)",
+                        "test_rmse": "Test RMSE (log)",
                         "train_mape": "Train MAPE",
                         "test_mape": "Test MAPE",
                     }
@@ -807,49 +884,138 @@ def main():
                     "Train RMSE",
                     "Test RMSE",
                 ]
-                display_df = display_df[display_cols]
+                st.dataframe(display_df[display_cols], use_container_width=True)
+                st.caption(
+                    "MAE and RMSE above are in real ringgit (RM), computed live from "
+                    "the trained models against the same held-out test split used at "
+                    "training time. A few very expensive outlier properties can "
+                    "dominate this real-scale error even when the model performs well "
+                    "on typical properties."
+                )
 
-                st.dataframe(display_df, use_container_width=True)
-
-                # ==========================================
-                # SUMMARY SECTION
-                # ==========================================
-                st.markdown("### Model Performance Summary")
-                st.info("Write your summary and insights about the table metrics here.")
-                # ==========================================
+                with st.expander("Show log1p-scale MAE / RMSE (from metrics.json)"):
+                    st.caption(
+                        "Since models are trained on log1p-transformed price, these "
+                        "log-scale errors better reflect what the optimizer actually "
+                        "minimized, and are less skewed by luxury-property outliers."
+                    )
+                    log_cols = [
+                        "Train MAE (log)",
+                        "Test MAE (log)",
+                        "Train RMSE (log)",
+                        "Test RMSE (log)",
+                    ]
+                    st.dataframe(display_df[log_cols], use_container_width=True)
 
                 st.markdown("### R² Comparison (Train vs Test)")
-                show_image_if_exists(
-                    plots_dir / "model_comparison_r2.png",
-                    "Train vs Test R² Comparison (Higher is Better)",
-                    script_hint="src/model_visual.py",
+                st.caption(
+                    "The greater the difference between Train and Test, the more likely the model is overfitting."
                 )
+                trend_plots_dir = project_root / "report_assets" / "plots"
+                fig, ax = plt.subplots(figsize=(8, 5))
+                x = np.arange(len(metrics_df))
+                width = 0.35
+                ax.bar(
+                    x - width / 2,
+                    metrics_df["train_r2"],
+                    width,
+                    label="Train R²",
+                    color="#74b9ff",
+                )
+                ax.bar(
+                    x + width / 2,
+                    metrics_df["test_r2"],
+                    width,
+                    label="Test R²",
+                    color="#00b894",
+                )
+                ax.set_xticks(x)
+                ax.set_xticklabels(metrics_df.index, rotation=15)
+                ax.set_ylabel("R² Score")
+                ax.set_title("Train vs Test R² by Model", fontweight="bold")
+                ax.axhline(0, color="gray", linewidth=0.8)
+                ax.legend()
+                st.pyplot(fig)
 
                 st.markdown("### Test MAE Comparison")
-                show_image_if_exists(
-                    plots_dir / "model_comparison_test_mae.png",
-                    "Test MAE Comparison (Lower is Better)",
-                    script_hint="src/model_visual.py",
+                st.caption(
+                    "Lower values represent smaller average prediction errors on "
+                    "the test set, in real ringgit (RM)."
                 )
+                fig2, ax2 = plt.subplots(figsize=(8, 5))
+                sns.barplot(
+                    x=metrics_df.index,
+                    y=metrics_df["test_mae_rm"],
+                    ax=ax2,
+                    hue=metrics_df.index,
+                    palette="Set2",
+                    legend=False,
+                )
+                ax2.set_ylabel("Test MAE (RM)")
+                ax2.set_xlabel("")
+                ax2.set_title("Test MAE by Model (lower is better)", fontweight="bold")
+                ax2.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda x, p: format(int(x), ","))
+                )
+                for p in ax2.patches:
+                    if pd.notna(p.get_height()):
+                        ax2.annotate(
+                            f"RM {p.get_height():,.0f}",
+                            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                            ha="center",
+                            va="bottom",
+                            xytext=(0, 5),
+                            textcoords="offset points",
+                        )
+                st.pyplot(fig2)
 
                 st.markdown("### Test RMSE Comparison")
-                show_image_if_exists(
-                    plots_dir / "model_comparison_test_rmse.png",
-                    "Test RMSE Comparison (Lower is Better)",
-                    script_hint="src/model_visual.py",
+                st.caption(
+                    "Lower values represent smaller squared prediction error on "
+                    "the test set (penalizes large misses more than MAE), in "
+                    "real ringgit (RM)."
                 )
+                fig3, ax3 = plt.subplots(figsize=(8, 5))
+                sns.barplot(
+                    x=metrics_df.index,
+                    y=metrics_df["test_rmse_rm"],
+                    ax=ax3,
+                    hue=metrics_df.index,
+                    palette="muted",
+                    legend=False,
+                )
+                ax3.set_ylabel("Test RMSE (RM)")
+                ax3.set_xlabel("")
+                ax3.set_title("Test RMSE by Model (lower is better)", fontweight="bold")
+                ax3.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda x, p: format(int(x), ","))
+                )
+                for p in ax3.patches:
+                    if pd.notna(p.get_height()):
+                        ax3.annotate(
+                            f"RM {p.get_height():,.0f}",
+                            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                            ha="center",
+                            va="bottom",
+                            xytext=(0, 5),
+                            textcoords="offset points",
+                        )
+                st.pyplot(fig3)
 
                 st.markdown("### Test MAPE Comparison")
                 show_image_if_exists(
-                    plots_dir / "model_comparison_test_mape.png",
+                    trend_plots_dir / "model_comparison_test_mape.png",
                     "Test MAPE Comparison (Lower is Better)",
-                    script_hint="src/model_visual.py",
                 )
 
                 st.markdown("### Actual vs Predicted Plots")
                 actual_vs_pred_files = sorted(
-                    list(plots_dir.glob("actual_vs_predicted_*.png"))
+                    trend_plots_dir.glob("actual_vs_predicted_*.png")
                 )
+                # Exclude the new sorted-trend charts — shown separately below
+                actual_vs_pred_files = [
+                    f for f in actual_vs_pred_files if "trend" not in f.stem
+                ]
                 if actual_vs_pred_files:
                     for plot_file in actual_vs_pred_files:
                         model_title = (
@@ -859,16 +1025,14 @@ def main():
                         )
                         st.markdown(f"#### Actual vs Predicted ({model_title})")
                         show_image_if_exists(
-                            plot_file,
-                            f"Actual vs Predicted - {model_title}",
-                            script_hint="src/model_visual.py",
+                            plot_file, f"Actual vs Predicted - {model_title}"
                         )
                 else:
                     st.caption("No Actual vs Predicted plots found.")
 
                 st.markdown("### Residuals vs Predicted Plots")
                 residuals_files = sorted(
-                    list(plots_dir.glob("residuals_vs_predicted_*.png"))
+                    trend_plots_dir.glob("residuals_vs_predicted_*.png")
                 )
                 if residuals_files:
                     for plot_file in residuals_files:
@@ -879,9 +1043,7 @@ def main():
                         )
                         st.markdown(f"#### Residuals vs Predicted ({model_title})")
                         show_image_if_exists(
-                            plot_file,
-                            f"Residuals vs Predicted - {model_title}",
-                            script_hint="src/model_visual.py",
+                            plot_file, f"Residuals vs Predicted - {model_title}"
                         )
                 else:
                     st.caption("No Residuals vs Predicted plots found.")
@@ -894,20 +1056,36 @@ def main():
                     "model_comparison_test_rmse.png",
                     "model_comparison_test_mape.png",
                 ]
+                trend_filenames = {
+                    f"actual_vs_predicted_trend_{m.lower().replace(' ', '_')}.png"
+                    for m in models.keys()
+                }
                 other_plots = [
                     f
-                    for f in sorted(list(plots_dir.glob("*.png")))
+                    for f in sorted(trend_plots_dir.glob("*.png"))
                     if not f.name.startswith("actual_vs_predicted_")
                     and not f.name.startswith("residuals_vs_predicted_")
                     and f.name not in known_plots
+                    and f.name not in trend_filenames
                 ]
                 if other_plots:
                     for plot_file in other_plots:
                         title = plot_file.stem.replace("_", " ").title()
                         st.markdown(f"#### {title}")
-                        show_image_if_exists(
-                            plot_file, title, script_hint="src/model_visual.py"
-                        )
+                        show_image_if_exists(plot_file, title)
+
+                st.markdown("### Sorted Actual vs Predicted Price Trend")
+                st.caption(
+                    "Test samples sorted by actual price, with actual vs predicted "
+                    "price overlaid as line trends. Generated by `src/model_trend.py` "
+                    "— run that script first if a chart below shows as missing."
+                )
+                for m_name in models.keys():
+                    safe_name = m_name.lower().replace(" ", "_")
+                    show_image_if_exists(
+                        trend_plots_dir / f"actual_vs_predicted_trend_{safe_name}.png",
+                        f"{m_name}: Actual vs Predicted Trend",
+                    )
 
     # --- TAB 4: EDA ---
     with tab4:
