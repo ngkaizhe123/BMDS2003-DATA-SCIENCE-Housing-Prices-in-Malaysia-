@@ -813,9 +813,7 @@ def main():
 
                 # ==========================================
                 # SUMMARY SECTION
-                # ==========================================
-                st.markdown("### Model Performance Summary")
-                st.info("Write your summary and insights about the table metrics here.")
+                st.info("The Metrics Comparison Table evaluates the performance of four predictive models, the best predictive algorithm for the provided dataset can be considered as XGBoost. The main advantage of the model in terms of its performance stems from the natural L1 and L2 regularization features, aimed at penalizing complexity. From the mathematical point of view, it allows minimizing errors as much as possible and receiving the lowest error rate (Test RMSE of 0.3019) with an additional reduction of the problem of overfitting.\n \n At the same time, despite the good predictive qualities of the theoretical approach, the Random Forest model had some difficulties with solving the problem of balancing the trade-off between bias and variance. Being restricted by the small amount of observations (about 1,680), Random Forest received the highest generalization gap (Gap Test R² of 0.1372). Therefore, in comparison with this model, SVR proved to be more effective in generalizing the data and therefore showed higher values of Test R² (0.6812). At last, Multiple Linear Regression model demonstrates the worst performance metrics among all algorithms because of the restriction by linearity assumption.")
                 # ==========================================
 
                 st.markdown("### R² Comparison (Train vs Test)")
