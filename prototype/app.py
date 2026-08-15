@@ -846,6 +846,31 @@ def main():
                     script_hint="src/model_visual.py",
                 )
 
+                st.markdown("### Price Trend Plots (Actual vs Predicted, Sorted by Price)")
+                st.caption(
+                    "Test samples sorted by actual price, so the red line traces a smooth "
+                    "ascending trend; the blue line shows how closely each model's predictions "
+                    "track it point-by-point."
+                )
+                price_trend_files = sorted(list(plots_dir.glob("price_trend_*.png")))
+                if price_trend_files:
+                    for plot_file in price_trend_files:
+                        model_title = (
+                            plot_file.stem.replace("price_trend_", "")
+                            .replace("_", " ")
+                            .title()
+                        )
+                        st.markdown(f"#### {model_title}")
+                        show_image_if_exists(
+                            plot_file,
+                            f"Price Trend - {model_title}",
+                            script_hint="src/price_trend_visual.py",
+                        )
+                else:
+                    st.caption(
+                        "No Price Trend plots found. Run `python src/price_trend_visual.py` to generate them."
+                    )
+
                 st.markdown("### Actual vs Predicted Plots")
                 actual_vs_pred_files = sorted(
                     list(plots_dir.glob("actual_vs_predicted_*.png"))
@@ -899,6 +924,7 @@ def main():
                     for f in sorted(list(plots_dir.glob("*.png")))
                     if not f.name.startswith("actual_vs_predicted_")
                     and not f.name.startswith("residuals_vs_predicted_")
+                    and not f.name.startswith("price_trend_")
                     and f.name not in known_plots
                 ]
                 if other_plots:
