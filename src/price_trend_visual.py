@@ -48,10 +48,24 @@ def plot_price_trend(model, model_name, X_test, y_test):
     sample_index = np.arange(len(actual_sorted))
 
     fig, ax = plt.subplots(figsize=(11, 6))
-    ax.plot(sample_index, actual_sorted, color="#E88B8B", linewidth=1.5, label="Actual Price")
-    ax.plot(sample_index, predicted_sorted, color="#5B7FE0", linewidth=1, label="Predicted Price")
+    ax.plot(
+        sample_index,
+        actual_sorted,
+        color="#E88B8B",
+        linewidth=1.5,
+        label="Actual Price",
+    )
+    ax.plot(
+        sample_index,
+        predicted_sorted,
+        color="#5B7FE0",
+        linewidth=1,
+        label="Predicted Price",
+    )
 
-    ax.set_title(f"{model_name}: Actual vs Predicted Price Trend", fontsize=14, fontweight="bold")
+    ax.set_title(
+        f"{model_name}: Actual vs Predicted Price Trend", fontsize=14, fontweight="bold"
+    )
     ax.set_xlabel("Test Samples (Sorted by Price)")
     ax.set_ylabel("Price (RM)")
     ax.yaxis.set_major_formatter(lambda x, _: f"{x:,.0f}")
@@ -65,7 +79,9 @@ def plot_price_trend(model, model_name, X_test, y_test):
 # --------------------------------------------------
 # Generate for all 4 models
 # --------------------------------------------------
-def generate_all_price_trends(prototype_dir: Path = None, df_visual: pd.DataFrame = None):
+def generate_all_price_trends(
+    prototype_dir: Path = None, df_visual: pd.DataFrame = None
+):
     """
     Load each trained model from the prototype/ directory, rebuild the same
     train/test split used during training, and return a dict mapping

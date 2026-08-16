@@ -813,7 +813,9 @@ def main():
 
                 # ==========================================
                 # SUMMARY SECTION
-                st.info("The Metrics Comparison Table evaluates the performance of four predictive models, the best predictive algorithm for the provided dataset can be considered as XGBoost. The main advantage of the model in terms of its performance stems from the natural L1 and L2 regularization features, aimed at penalizing complexity. From the mathematical point of view, it allows minimizing errors as much as possible and receiving the lowest error rate (Test RMSE of 0.3019) with an additional reduction of the problem of overfitting.\n \n At the same time, despite the good predictive qualities of the theoretical approach, the Random Forest model had some difficulties with solving the problem of balancing the trade-off between bias and variance. Being restricted by the small amount of observations (about 1,680), Random Forest received the highest generalization gap (Gap Test R² of 0.1372). Therefore, in comparison with this model, SVR proved to be more effective in generalizing the data and therefore showed higher values of Test R² (0.6812). At last, Multiple Linear Regression model demonstrates the worst performance metrics among all algorithms because of the restriction by linearity assumption.")
+                st.info(
+                    "The Metrics Comparison Table evaluates the performance of four predictive models, the best predictive algorithm for the provided dataset can be considered as XGBoost. The main advantage of the model in terms of its performance stems from the natural L1 and L2 regularization features, aimed at penalizing complexity. From the mathematical point of view, it allows minimizing errors as much as possible and receiving the lowest error rate (Test RMSE of 0.3019) with an additional reduction of the problem of overfitting.\n \n At the same time, despite the good predictive qualities of the theoretical approach, the Random Forest model had some difficulties with solving the problem of balancing the trade-off between bias and variance. Being restricted by the small amount of observations (about 1,680), Random Forest received the highest generalization gap (Gap Test R² of 0.1372). Therefore, in comparison with this model, SVR proved to be more effective in generalizing the data and therefore showed higher values of Test R² (0.6812). At last, Multiple Linear Regression model demonstrates the worst performance metrics among all algorithms because of the restriction by linearity assumption."
+                )
                 # ==========================================
 
                 st.markdown("### R² Comparison (Train vs Test)")
@@ -844,7 +846,9 @@ def main():
                     script_hint="src/model_visual.py",
                 )
 
-                st.markdown("### Price Trend Plots (Actual vs Predicted, Sorted by Price)")
+                st.markdown(
+                    "### Price Trend Plots (Actual vs Predicted, Sorted by Price)"
+                )
                 st.caption(
                     "Test samples sorted by actual price, so the red line traces a smooth "
                     "ascending trend; the blue line shows how closely each model's predictions "
@@ -852,18 +856,24 @@ def main():
                 )
                 price_trend_files = sorted(list(plots_dir.glob("price_trend_*.png")))
                 if price_trend_files:
-                    for plot_file in price_trend_files:
-                        model_title = (
-                            plot_file.stem.replace("price_trend_", "")
-                            .replace("_", " ")
-                            .title()
-                        )
-                        st.markdown(f"#### {model_title}")
-                        show_image_if_exists(
-                            plot_file,
-                            f"Price Trend - {model_title}",
-                            script_hint="src/price_trend_visual.py",
-                        )
+                    # Grid display the pictures (2*2)
+                    for i in range(0, len(price_trend_files), 2):
+                        cols = st.columns(2)
+                        for j in range(2):
+                            if i + j < len(price_trend_files):
+                                plot_file = price_trend_files[i + j]
+                                model_title = (
+                                    plot_file.stem.replace("price_trend_", "")
+                                    .replace("_", " ")
+                                    .title()
+                                )
+                                with cols[j]:
+                                    st.markdown(f"**{model_title}**")
+                                    show_image_if_exists(
+                                        plot_file,
+                                        f"Price Trend - {model_title}",
+                                        script_hint="src/price_trend_visual.py",
+                                    )
                 else:
                     st.caption(
                         "No Price Trend plots found. Run `python src/price_trend_visual.py` to generate them."
@@ -874,18 +884,23 @@ def main():
                     list(plots_dir.glob("actual_vs_predicted_*.png"))
                 )
                 if actual_vs_pred_files:
-                    for plot_file in actual_vs_pred_files:
-                        model_title = (
-                            plot_file.stem.replace("actual_vs_predicted_", "")
-                            .replace("_", " ")
-                            .title()
-                        )
-                        st.markdown(f"#### Actual vs Predicted ({model_title})")
-                        show_image_if_exists(
-                            plot_file,
-                            f"Actual vs Predicted - {model_title}",
-                            script_hint="src/model_visual.py",
-                        )
+                    for i in range(0, len(actual_vs_pred_files), 2):
+                        cols = st.columns(2)
+                        for j in range(2):
+                            if i + j < len(actual_vs_pred_files):
+                                plot_file = actual_vs_pred_files[i + j]
+                                model_title = (
+                                    plot_file.stem.replace("actual_vs_predicted_", "")
+                                    .replace("_", " ")
+                                    .title()
+                                )
+                                with cols[j]:
+                                    st.markdown(f"**{model_title}**")
+                                    show_image_if_exists(
+                                        plot_file,
+                                        f"Actual vs Predicted - {model_title}",
+                                        script_hint="src/model_visual.py",
+                                    )
                 else:
                     st.caption("No Actual vs Predicted plots found.")
 
@@ -894,18 +909,25 @@ def main():
                     list(plots_dir.glob("residuals_vs_predicted_*.png"))
                 )
                 if residuals_files:
-                    for plot_file in residuals_files:
-                        model_title = (
-                            plot_file.stem.replace("residuals_vs_predicted_", "")
-                            .replace("_", " ")
-                            .title()
-                        )
-                        st.markdown(f"#### Residuals vs Predicted ({model_title})")
-                        show_image_if_exists(
-                            plot_file,
-                            f"Residuals vs Predicted - {model_title}",
-                            script_hint="src/model_visual.py",
-                        )
+                    for i in range(0, len(residuals_files), 2):
+                        cols = st.columns(2)
+                        for j in range(2):
+                            if i + j < len(residuals_files):
+                                plot_file = residuals_files[i + j]
+                                model_title = (
+                                    plot_file.stem.replace(
+                                        "residuals_vs_predicted_", ""
+                                    )
+                                    .replace("_", " ")
+                                    .title()
+                                )
+                                with cols[j]:
+                                    st.markdown(f"**{model_title}**")
+                                    show_image_if_exists(
+                                        plot_file,
+                                        f"Residuals vs Predicted - {model_title}",
+                                        script_hint="src/model_visual.py",
+                                    )
                 else:
                     st.caption("No Residuals vs Predicted plots found.")
 
