@@ -239,7 +239,7 @@ def main():
                     textcoords="offset points",
                 )
             ax.tick_params(axis="x", rotation=0)
-            ax.set_ylim(0, df_metrics["test_rmse"].max()*1.15)
+            ax.set_ylim(0, df_metrics["test_rmse"].max() * 1.15)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_rmse.png", dpi=300)
             plt.close()
