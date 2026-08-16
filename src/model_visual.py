@@ -128,7 +128,7 @@ def main():
         # Chart: R² Comparison (Train vs Test side-by-side)
         import numpy as np
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(10, 9))
         x = np.arange(len(df_metrics))
         width = 0.35
         bars_train = ax.bar(
@@ -153,7 +153,7 @@ def main():
             "Model Comparison - Train vs Test R² Score (Higher is Better)",
             fontweight="bold",
         )
-        ax.set_ylim(0, 1.15)
+        ax.set_ylim(0, 1)
         ax.legend(loc="upper right")
         ax.axhline(0, color="gray", linewidth=0.8)
 
@@ -177,7 +177,7 @@ def main():
 
         # Chart: Test MAE Comparison
         if "test_mae" in df_metrics.columns:
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(10, 7))
             sns.barplot(
                 x=wrapped_labels,
                 y=df_metrics["test_mae"],
@@ -204,7 +204,7 @@ def main():
                     textcoords="offset points",
                 )
             ax.tick_params(axis="x", rotation=0)
-            ax.set_ylim(0, df_metrics["test_mae"].max() * 1.25)
+            ax.set_ylim(0, df_metrics["test_mae"].max() * 1.15)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_mae.png", dpi=300)
             plt.close()
@@ -212,7 +212,7 @@ def main():
 
         # Chart: Test RMSE Comparison
         if "test_rmse" in df_metrics.columns:
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(10, 9))
             sns.barplot(
                 x=wrapped_labels,
                 y=df_metrics["test_rmse"],
@@ -239,7 +239,7 @@ def main():
                     textcoords="offset points",
                 )
             ax.tick_params(axis="x", rotation=0)
-            ax.set_ylim(0, df_metrics["test_rmse"].max() * 1.25)
+            ax.set_ylim(0, df_metrics["test_rmse"].max() * 1.15)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_rmse.png", dpi=300)
             plt.close()
@@ -247,7 +247,7 @@ def main():
 
         # Chart: Test MAPE Comparison
         if "test_mape" in df_metrics.columns:
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(10, 8))
             mape_pct = df_metrics["test_mape"] * 100
             sns.barplot(
                 x=wrapped_labels,
