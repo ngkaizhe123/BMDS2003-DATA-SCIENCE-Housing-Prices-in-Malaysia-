@@ -187,25 +187,24 @@ def main():
                 ax=ax,
             )
             ax.set_xlabel("Models")
-            ax.set_ylabel("Test MAE (RM)")
+            ax.set_ylabel("Test MAE (Log Scale)")
             ax.set_title(
-                "Model Comparison - Test MAE (Lower is Better)",
+                "Model Comparison - Test MAE (Log Scale, Lower is Better)",
                 fontweight="bold",
             )
-            ax.yaxis.set_major_formatter(
-                ticker.FuncFormatter(lambda x, p: format(int(x), ","))
-            )
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{x:.4f}"))
             for p in ax.patches:
+                height = p.get_height()
                 ax.annotate(
-                    f"RM {p.get_height():,.0f}",
-                    (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                    f"{height:.4f}",
+                    (p.get_x() + p.get_width() / 2.0, height),
                     ha="center",
                     va="bottom",
                     xytext=(0, 5),
                     textcoords="offset points",
                 )
             ax.tick_params(axis="x", rotation=0)
-            ax.set_ylim(0, df_metrics["test_mae"].max() * 1.15)
+            ax.set_ylim(0, df_metrics["test_mae"].max() * 1.25)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_mae.png", dpi=300)
             plt.close()
@@ -223,25 +222,24 @@ def main():
                 ax=ax,
             )
             ax.set_xlabel("Models")
-            ax.set_ylabel("Test RMSE (RM)")
+            ax.set_ylabel("Test RMSE (Log Scale)")
             ax.set_title(
-                "Model Comparison - Test RMSE (Lower is Better)",
+                "Model Comparison - Test RMSE (Log Scale, Lower is Better)",
                 fontweight="bold",
             )
-            ax.yaxis.set_major_formatter(
-                ticker.FuncFormatter(lambda x, p: format(int(x), ","))
-            )
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{x:.4f}"))
             for p in ax.patches:
+                height = p.get_height()
                 ax.annotate(
-                    f"RM {p.get_height():,.0f}",
-                    (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                    f"{height:.4f}",
+                    (p.get_x() + p.get_width() / 2.0, height),
                     ha="center",
                     va="bottom",
                     xytext=(0, 5),
                     textcoords="offset points",
                 )
             ax.tick_params(axis="x", rotation=0)
-            ax.set_ylim(0, df_metrics["test_rmse"].max() * 1.15)
+            ax.set_ylim(0, df_metrics["test_rmse"].max() * 1.25)
             plt.tight_layout()
             plt.savefig(output_dir / "model_comparison_test_rmse.png", dpi=300)
             plt.close()
