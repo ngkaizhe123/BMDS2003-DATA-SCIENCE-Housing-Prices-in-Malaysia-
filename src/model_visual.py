@@ -192,9 +192,7 @@ def main():
                 "Model Comparison - Test MAE (Log Scale, Lower is Better)",
                 fontweight="bold",
             )
-            ax.yaxis.set_major_formatter(
-                ticker.FuncFormatter(lambda x, p: f"{x:.4f}")
-            )
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{x:.4f}"))
             for p in ax.patches:
                 height = p.get_height()
                 ax.annotate(
@@ -229,9 +227,7 @@ def main():
                 "Model Comparison - Test RMSE (Log Scale, Lower is Better)",
                 fontweight="bold",
             )
-            ax.yaxis.set_major_formatter(
-                ticker.FuncFormatter(lambda x, p: f"{x:.4f}")
-            )
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: f"{x:.4f}"))
             for p in ax.patches:
                 height = p.get_height()
                 ax.annotate(
