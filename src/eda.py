@@ -288,7 +288,9 @@ def main():
         linecolor="white",
         cbar_kws={"label": "Association Strength"},
     )
-    plt.title("Association Strength — All Features\n(Pearson / Cramer's V / Correlation Ratio)")
+    plt.title(
+        "Association Strength — All Features\n(Pearson / Cramer's V / Correlation Ratio)"
+    )
     plt.tight_layout()
     plt.savefig(output_dir / "all_features_association_heatmap.png", dpi=300)
     plt.close()
