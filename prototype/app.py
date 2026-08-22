@@ -856,7 +856,6 @@ def main():
                 )
                 price_trend_files = sorted(list(plots_dir.glob("price_trend_*.png")))
                 if price_trend_files:
-                    # Grid display the pictures (2*2)
                     for i in range(0, len(price_trend_files), 2):
                         cols = st.columns(2)
                         for j in range(2):
@@ -1048,6 +1047,12 @@ def main():
             # ---------------- Numeric Features ----------------
             with eda_tabs[2]:
                 st.markdown("#### Numeric Feature Distributions")
+                st.caption(
+                    "Raw distribution, log1p-transformed distribution, and boxplot "
+                    "(for outlier inspection) for each numeric column. The log1p view "
+                    "helps justify which features get log-transformed before modeling "
+                    "(e.g. `Transactions` → `Log_Transactions`)."
+                )
                 numeric_cols = raw_df.select_dtypes(include=np.number).columns.tolist()
 
                 if not numeric_cols:
@@ -1055,19 +1060,35 @@ def main():
                 else:
                     for col in numeric_cols:
                         st.markdown(f"**{col}**")
+
+                        skew_raw = raw_df[col].skew()
+                        skew_log = np.log1p(raw_df[col]).skew()
                         n_outliers = _count_iqr_outliers(raw_df[col])
                         pct = n_outliers / len(raw_df) * 100
-                        st.caption(
-                            f"{n_outliers} potential outliers detected via the IQR rule "
-                            f"({pct:.1f}% of rows)."
+
+                        m1, m2, m3 = st.columns(3)
+                        m1.metric("Skew (raw)", f"{skew_raw:.2f}")
+                        m2.metric("Skew (log1p)", f"{skew_log:.2f}")
+                        m3.metric("IQR Outliers", f"{n_outliers} ({pct:.1f}%)")
+
+                        # Median_Price already has its own log-distribution image
+                        # generated under a different filename (see Target Variable
+                        # tab), so reuse that instead of expecting a duplicate file.
+                        log_img_path = (
+                            eda_dir / "log_target_distribution.png"
+                            if col == "Median_Price"
+                            else eda_dir / f"{col}_log_distribution.png"
                         )
-                        img_c1, img_c2 = st.columns(2)
+
+                        img_c1, img_c2, img_c3 = st.columns(3)
                         with img_c1:
                             show_image_if_exists(
                                 eda_dir / f"{col}_distribution.png",
-                                f"{col} Distribution",
+                                f"{col} (raw)",
                             )
                         with img_c2:
+                            show_image_if_exists(log_img_path, f"{col} (log1p)")
+                        with img_c3:
                             show_image_if_exists(
                                 eda_dir / f"{col}_boxplot.png", f"{col} Boxplot"
                             )
@@ -1137,9 +1158,15 @@ def main():
             # ---------------- Correlation ----------------
             with eda_tabs[5]:
                 st.markdown("#### Correlation Between Numeric Features")
-                show_image_if_exists(
-                    eda_dir / "correlation_heatmap.png", "Correlation Heatmap"
+                st.caption(
+                    "Standard Pearson correlation — only valid between numeric columns."
                 )
+                _, corr_col, _ = st.columns([1, 2, 1])
+                with corr_col:
+                    show_image_if_exists(
+                        eda_dir / "correlation_heatmap.png",
+                        "Correlation Heatmap (Numeric Only)",
+                    )
 
                 if "Median_Price" in raw_df.columns and "Median_PSF" in raw_df.columns:
                     corr_val = raw_df["Median_Price"].corr(raw_df["Median_PSF"])
@@ -1153,6 +1180,36 @@ def main():
                         "reverse-engineered from it — is excluded from model training as a "
                         "target-leakage risk (see report methodology section)."
                     )
+
+                st.markdown("---")
+                st.markdown("#### Association Strength — All Features")
+                st.caption(
+                    "Pearson correlation only works between numeric columns, so this "
+                    "heatmap uses different measures depending on column type: Pearson "
+                    "correlation (numeric vs numeric), Correlation Ratio / η (numeric vs "
+                    "categorical), and Cramér's V (categorical vs categorical). Unlike "
+                    "Pearson, the latter two range from 0 to 1 and only measure association "
+                    "**strength**, not direction — a high value doesn't tell you whether the "
+                    "relationship is positive or negative. `Township` is excluded, for the "
+                    "same reason it's excluded from model training: it's a near-unique "
+                    "identifier per row, not a genuine categorical predictor."
+                )
+                _, assoc_col, _ = st.columns([1, 2, 1])
+                with assoc_col:
+                    show_image_if_exists(
+                        eda_dir / "all_features_association_heatmap.png",
+                        "Association Strength — All Features",
+                    )
+
+                if "Area" in raw_df.columns:
+                    n_area = raw_df["Area"].nunique()
+                    if n_area > 50:
+                        st.caption(
+                            f"⚠️ `Area` has {n_area} unique categories relative to "
+                            f"{len(raw_df)} rows. Association values involving `Area` are "
+                            f"based on a sparse contingency table and should be read as "
+                            f"directional signals rather than precise estimates."
+                        )
 
 
 if __name__ == "__main__":
