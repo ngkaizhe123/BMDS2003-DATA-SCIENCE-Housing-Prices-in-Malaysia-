@@ -24,6 +24,7 @@ Housing-Prices-Malaysia/
 │   ├── eda.py                 # Exploratory Data Analysis script
 │   ├── data_preprocessing.py  # Script for handling missing values, outliers, & encoding
 │   ├── utils.py               # Shared utility functions (e.g., standardized evaluation metrics)
+│   ├── model_visual.py       # Data visualization script
 │   │
 │   └── models/                     # Model training scripts (one per member)
 │       ├── __init__.py
@@ -42,3 +43,35 @@ Housing-Prices-Malaysia/
 ├── .gitignore                 # Specifies intentionally untracked files to ignore
 ├── requirements.txt           # Python dependencies
 └── README.md                  # Project documentation
+
+```
+
+---
+
+## 🚀 How to Run the Streamlit Prototype
+
+Follow these steps to set up a clean Python 3.12 virtual environment, install dependencies, and launch the Streamlit web application.
+
+### Prerequisites
+* **Python 3.12** installed on your system.
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/ngkaizhe123/BMDS2003-DATA-SCIENCE-Housing-Prices-in-Malaysia-.git
+```
+
+### 2. Set Up a Python 3.12 Virtual Environment
+```bash
+py -3.12 -m venv venv
+venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Run the Streamlit App
+```bash
+streamlit run prototype/app.py
+```
