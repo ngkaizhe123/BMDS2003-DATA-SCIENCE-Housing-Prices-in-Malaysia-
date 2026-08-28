@@ -184,6 +184,7 @@ if __name__ == "__main__":
     print(f"Saving cleaned data to {output_path}...")
     clean_df.to_csv(output_path, index=False)
     print("✅ Data successfully preprocessed and saved!")
+
     # =========================================================
     # 4. Generate LookUp table
     # =========================================================
@@ -196,7 +197,7 @@ if __name__ == "__main__":
     # Calculate total transactions from raw data for accurate density
     total_tx = raw_df["Transactions"].sum()
 
-    # --- NEW: Tracking Counters ---
+    # --- Tracking Counters ---
     total_areas = 0
     successful_geocodes = 0
     failed_geocodes = 0

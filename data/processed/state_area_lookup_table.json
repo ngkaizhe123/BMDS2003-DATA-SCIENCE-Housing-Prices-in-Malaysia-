@@ -75,8 +75,8 @@
         "Gurney": {
             "Transactions": 15.0,
             "Area_Transaction_Density": 0.00026698467507965044,
-            "lat": 5.4403652,
-            "lon": 100.3086871
+            "lat": 5.4405669,
+            "lon": 100.3086373
         },
         "Jelutong": {
             "Transactions": 16.0,
@@ -141,8 +141,8 @@
         "Simpang Ampat": {
             "Transactions": 12.0,
             "Area_Transaction_Density": 0.004965914956481498,
-            "lat": 5.2860074,
-            "lon": 100.4807631
+            "lat": 5.28593,
+            "lon": 100.4808341
         },
         "Sungai Ara": {
             "Transactions": 15.0,
@@ -391,8 +391,8 @@
         "Batu Gajah": {
             "Transactions": 11.0,
             "Area_Transaction_Density": 0.0035241977110513855,
-            "lat": 4.4599038,
-            "lon": 101.0492579
+            "lat": 4.4597256,
+            "lon": 101.0495569
         },
         "Batu Kurau": {
             "Transactions": 11.0,
@@ -463,8 +463,8 @@
         "Lahat": {
             "Transactions": 15.0,
             "Area_Transaction_Density": 0.0016909029421711193,
-            "lat": 4.5395309,
-            "lon": 101.0531217
+            "lat": 4.5394823,
+            "lon": 101.0532669
         },
         "Lumut": {
             "Transactions": 18.5,
@@ -511,8 +511,8 @@
         "Seri Manjong": {
             "Transactions": 20.0,
             "Area_Transaction_Density": 0.0003559795667728672,
-            "lat": null,
-            "lon": null
+            "lat": 4.2084,
+            "lon": 100.6619
         },
         "Simpang": {
             "Transactions": 11.0,
@@ -553,8 +553,8 @@
         "Tanjong Tualang": {
             "Transactions": 27.0,
             "Area_Transaction_Density": 0.00048057241514337076,
-            "lat": null,
-            "lon": null
+            "lat": 4.32606,
+            "lon": 101.05585
         },
         "Tapah": {
             "Transactions": 199.0,
@@ -669,8 +669,8 @@
         "Klebang": {
             "Transactions": 20.0,
             "Area_Transaction_Density": 0.0003559795667728672,
-            "lat": 2.2202014,
-            "lon": 102.2015047
+            "lat": 2.2178337,
+            "lon": 102.202153
         },
         "Krubong": {
             "Transactions": 24.0,
@@ -723,8 +723,8 @@
         "Sungei Baru Tengah": {
             "Transactions": 10.5,
             "Area_Transaction_Density": 0.0003737785451115106,
-            "lat": null,
-            "lon": null
+            "lat":  2.3500,
+            "lon": 102.1000
         },
         "Sungei Petai": {
             "Transactions": 76.0,
@@ -755,8 +755,8 @@
         "Ampang": {
             "Transactions": 12.5,
             "Area_Transaction_Density": 0.005909260808429596,
-            "lat": 3.1502555,
-            "lon": 101.7602101
+            "lat": 3.1505141,
+            "lon": 101.7600712
         },
         "Ara Damansara": {
             "Transactions": 17.0,
@@ -803,8 +803,8 @@
         "Bandar Utama": {
             "Transactions": 25.0,
             "Area_Transaction_Density": 0.0033284089493263087,
-            "lat": 3.1468634,
-            "lon": 101.6186865
+            "lat": 3.1432113,
+            "lon": 101.6113803
         },
         "Bangi": {
             "Transactions": 24.5,
@@ -971,8 +971,8 @@
         "Port Klang": {
             "Transactions": 15.0,
             "Area_Transaction_Density": 0.0009789438086253849,
-            "lat": 2.9996041,
-            "lon": 101.3913635
+            "lat": 2.9996963,
+            "lon": 101.3913589
         },
         "Puchong": {
             "Transactions": 16.0,
@@ -1067,20 +1067,20 @@
         "Sungai Buloh": {
             "Transactions": 17.5,
             "Area_Transaction_Density": 0.0025452539024260006,
-            "lat": 3.2063793,
-            "lon": 101.5817709
+            "lat": 3.2062441,
+            "lon": 101.5799923
         },
         "Tanjong Duabelas": {
             "Transactions": 16.0,
             "Area_Transaction_Density": 0.006994998487086841,
-            "lat": null,
-            "lon": null
+            "lat": 2.8123,
+            "lon": 101.4978
         },
         "Telok Panglima Garang": {
             "Transactions": 25.0,
             "Area_Transaction_Density": 0.0030792232525853015,
-            "lat": 2.9184962,
-            "lon": 101.4737128
+            "lat": 2.9171902,
+            "lon": 101.4743889
         },
         "Tropicana": {
             "Transactions": 17.0,
@@ -1135,8 +1135,8 @@
         "Gemas": {
             "Transactions": 10.0,
             "Area_Transaction_Density": 0.0003559795667728672,
-            "lat": 2.5795285,
-            "lon": 102.6138167
+            "lat": 2.5800167,
+            "lon": 102.6136691
         },
         "Jimah": {
             "Transactions": 58.0,
@@ -1371,8 +1371,8 @@
         "Teloi Kiri": {
             "Transactions": 13.0,
             "Area_Transaction_Density": 0.0004627734368047274,
-            "lat": null,
-            "lon": null
+            "lat": 5.36885,
+            "lon": 100.672
         }
     },
     "Kuala Lumpur": {
@@ -1397,8 +1397,8 @@
         "Bandar Tasik Selatan": {
             "Transactions": 20.5,
             "Area_Transaction_Density": 0.0007297581118843778,
-            "lat": 3.0760669,
-            "lon": 101.7113108
+            "lat": 3.0761577,
+            "lon": 101.7112369
         },
         "Bangsar": {
             "Transactions": 19.0,
@@ -1409,8 +1409,8 @@
         "Batu Caves": {
             "Transactions": 12.0,
             "Area_Transaction_Density": 0.0008721499385935247,
-            "lat": 3.2349415,
-            "lon": 101.6719359
+            "lat": 3.2282465,
+            "lon": 101.6892643
         },
         "Brickfields": {
             "Transactions": 12.0,
@@ -1463,8 +1463,8 @@
         "Dutamas": {
             "Transactions": 14.5,
             "Area_Transaction_Density": 0.0011213356353345317,
-            "lat": 3.1790671,
-            "lon": 101.6556907
+            "lat": 3.1851555,
+            "lon": 101.6674239
         },
         "Jalan Ipoh": {
             "Transactions": 16.0,
@@ -1481,8 +1481,8 @@
         "Jalan Kuching": {
             "Transactions": 38.0,
             "Area_Transaction_Density": 0.0026342487941192175,
-            "lat": 3.1645288,
-            "lon": 101.691976
+            "lat": 3.181531,
+            "lon": 101.6713558
         },
         "Jinjang": {
             "Transactions": 12.5,
@@ -1493,14 +1493,14 @@
         "KL City": {
             "Transactions": 15.0,
             "Area_Transaction_Density": 0.00026698467507965044,
-            "lat": 3.0526957,
-            "lon": 101.6925096
+            "lat": 3.1919485,
+            "lon": 101.6349635
         },
         "KL Sentral": {
             "Transactions": 21.0,
             "Area_Transaction_Density": 0.0003737785451115106,
-            "lat": 3.1343068,
-            "lon": 101.6863691
+            "lat": 3.1345936,
+            "lon": 101.6862636
         },
         "KLCC": {
             "Transactions": 14.0,
@@ -1553,8 +1553,8 @@
         "Sentul": {
             "Transactions": 13.5,
             "Area_Transaction_Density": 0.001619707028816546,
-            "lat": 3.181865,
-            "lon": 101.688607
+            "lat": 3.1823091,
+            "lon": 101.6887161
         },
         "Setapak": {
             "Transactions": 15.0,
@@ -1627,8 +1627,8 @@
         "Hulu Lepar": {
             "Transactions": 30.0,
             "Area_Transaction_Density": 0.0005339693501593009,
-            "lat": null,
-            "lon": null
+            "lat": 3.8324,
+            "lon": 102.8476
         },
         "Kuala Lipis": {
             "Transactions": 17.0,

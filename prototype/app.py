@@ -388,6 +388,7 @@ def render_input_form(form_key):
     size_widget_key = f"size_{form_key}"
     chk_tx_key = f"chk_tx_{form_key}"
     man_tx_key = f"man_tx_{form_key}"
+    last_click_key = f"last_map_click_{form_key}"
 
     # ---------------------------------------------------------
     # 1. Initialize Default Values
@@ -406,6 +407,8 @@ def render_input_form(form_key):
         st.session_state[size_widget_key] = 1200
     if chk_tx_key not in st.session_state:
         st.session_state[chk_tx_key] = True
+    if last_click_key not in st.session_state:
+        st.session_state[last_click_key] = None
 
     # ---------------------------------------------------------
     # 2. Callbacks (Executed BEFORE widgets are rendered)
@@ -448,25 +451,15 @@ def render_input_form(form_key):
         st.session_state[preset_key] = "Custom Input (Manual / Map Click)"
 
     # ---------------------------------------------------------
-    # 3. Render Preset Dropdown FIRST (Before any map logic runs)
+    # 3. Reserve Space for Preset Dropdown
     # ---------------------------------------------------------
-    st.selectbox(
-        "Auto Input Data (Optional):",
-        [
-            "Custom Input (Manual / Map Click)",
-            "Sample: Luxury Condo in KL",
-            "Sample: Standard Terrace in Johor",
-            "Sample: Affordable Flat in Penang",
-        ],
-        key=preset_key,
-        on_change=handle_preset_change
-    )
+    preset_placeholder = st.empty()
 
     # ---------------------------------------------------------
-    # 4. Handle Map Clicks via Query Params / Session State State-Change
+    # 4. Interactive Map Section
     # ---------------------------------------------------------
     st.markdown("### 🗺️ Interactive Location Map")
-    st.caption("Click on any marker pin to instantly select that location.")
+    st.caption("Hover over or click on any marker pin to select that location.")
 
     current_selected_state = st.session_state[state_widget_key]
     current_selected_area = st.session_state.get(area_widget_key, "")
@@ -482,8 +475,12 @@ def render_input_form(form_key):
     m = folium.Map(
         location=[center_lat, center_lon],
         zoom_start=zoom_level,
-        min_zoom=5, max_bounds=True,
-        min_lat=0.8, max_lat=7.5, min_lon=99.5, max_lon=119.5,
+        min_zoom=5,
+        max_bounds=True,
+        min_lat=0.8,
+        max_lat=7.5,
+        min_lon=99.5,
+        max_lon=119.5,
         tiles="CartoDB positron",
     )
 
@@ -492,82 +489,139 @@ def render_input_form(form_key):
             if isinstance(coords, dict) and coords.get("lat") is not None and coords.get("lon") is not None:
                 is_active = (loc_name == current_selected_area and state_name == current_selected_state)
                 icon_color, icon_type = ("red", "home") if is_active else ("blue", "info-sign")
+
                 folium.Marker(
                     location=[coords["lat"], coords["lon"]],
                     popup=f"{loc_name} ({state_name})",
+                    tooltip=f"📍 {loc_name} ({state_name})",
                     icon=folium.Icon(color=icon_color, icon=icon_type),
                 ).add_to(m)
 
-    map_output = st_folium(m, key=f"map_{form_key}", width=None, height=380,
-                           returned_objects=["last_object_clicked_popup"])
+    map_output = st_folium(
+        m,
+        key=f"map_{form_key}",
+        width=None,
+        height=380,
+        returned_objects=["last_object_clicked_popup"],
+    )
 
-    # If map pin is clicked, update session state safely BEFORE widgets are instantiated on next run
+    # FIXED: Handle Pin Click Event with "Click Memory"
     if map_output and map_output.get("last_object_clicked_popup"):
         clicked_popup = map_output["last_object_clicked_popup"]
-        try:
-            parts = clicked_popup.rsplit(" (", 1)
-            clicked_area_raw = parts[0].strip()
-            matched_state = parts[1].replace(")", "").strip()
 
-            if st.session_state.get(area_widget_key) != clicked_area_raw:
-                st.session_state[state_widget_key] = matched_state
-                st.session_state[area_widget_key] = clicked_area_raw
-                st.session_state[preset_key] = "Custom Input (Manual / Map Click)"
-                st.toast(f"📍 Selected from Map: **{clicked_area_raw}, {matched_state}**")
-                st.rerun()
-        except IndexError:
-            pass
+        # Only process if this is a BRAND NEW click we haven't seen yet!
+        if clicked_popup != st.session_state[last_click_key]:
+            st.session_state[last_click_key] = clicked_popup
+
+            try:
+                parts = clicked_popup.rsplit(" (", 1)
+                clicked_area_raw = parts[0].strip()
+                matched_state = parts[1].replace(")", "").strip()
+
+                if st.session_state.get(area_widget_key) != clicked_area_raw:
+                    st.session_state[state_widget_key] = matched_state
+                    st.session_state[area_widget_key] = clicked_area_raw
+                    st.session_state[preset_key] = "Custom Input (Manual / Map Click)"
+                    st.toast(f"📍 Selected from Map: **{clicked_area_raw}, {matched_state}**")
+
+                    st.rerun()  # Now perfectly safe to call!
+            except IndexError:
+                pass
 
     # ---------------------------------------------------------
-    # 5. Form Feature Inputs
+    # 5. Draw the Preset Dropdown
+    # ---------------------------------------------------------
+    preset_placeholder.selectbox(
+        "Auto Input Data (Optional):",
+        [
+            "Custom Input (Manual / Map Click)",
+            "Sample: Luxury Condo in KL",
+            "Sample: Standard Terrace in Johor",
+            "Sample: Affordable Flat in Penang",
+        ],
+        key=preset_key,
+        on_change=handle_preset_change,
+    )
+
+    # ---------------------------------------------------------
+    # 6. Form Feature Inputs (WITH EXPLICIT INDEXING)
     # ---------------------------------------------------------
     st.subheader("Property Features")
     col1, col2 = st.columns(2)
 
     with col1:
+        # Explicit Index Calculation for State
+        current_state = st.session_state.get(state_widget_key, "Selangor")
+        state_idx = available_states.index(current_state) if current_state in available_states else 0
+
         state = st.selectbox(
             "State",
             options=available_states,
+            index=state_idx,
             key=state_widget_key,
-            on_change=handle_state_change
+            on_change=handle_state_change,
         )
-        areas_in_state = sorted(list(state_area_lookup.get(state, {}).keys()))
 
-        if st.session_state.get(area_widget_key) not in areas_in_state and areas_in_state:
-            st.session_state[area_widget_key] = areas_in_state[0]
+        areas_in_state = sorted(list(state_area_lookup.get(state, {}).keys()))
+        if not areas_in_state:
+            areas_in_state = ["Insufficient Data"]
+
+        # Ensure area is valid, otherwise reset safely
+        current_area = st.session_state.get(area_widget_key, "")
+        if current_area not in areas_in_state:
+            current_area = areas_in_state[0]
+            st.session_state[area_widget_key] = current_area
+
+        # Explicit Index Calculation for Area
+        area_idx = areas_in_state.index(current_area) if current_area in areas_in_state else 0
 
         area = st.selectbox(
             "Area / Township",
-            options=areas_in_state if areas_in_state else ["Insufficient Data"],
+            options=areas_in_state,
+            index=area_idx,
             key=area_widget_key,
-            on_change=handle_manual_edit
+            on_change=handle_manual_edit,
         )
+
+        tenure_options = ["Freehold", "Leasehold", "Freehold and Leasehold"]
+        current_tenure = st.session_state.get(tenure_widget_key, "Freehold")
+        tenure_idx = tenure_options.index(current_tenure) if current_tenure in tenure_options else 0
+
         tenure = st.selectbox(
             "Tenure",
-            options=["Freehold", "Leasehold", "Freehold and Leasehold"],
+            options=tenure_options,
+            index=tenure_idx,
             key=tenure_widget_key,
-            on_change=handle_manual_edit
+            on_change=handle_manual_edit,
         )
 
     with col2:
+        type_options = ["Terrace House", "Condominium", "Apartment", "Semi D", "Bungalow", "Service Residence", "Flat",
+                        "Cluster House", "Town House"]
+        current_type = st.session_state.get(type_widget_key, "Terrace House")
+        type_idx = type_options.index(current_type) if current_type in type_options else 0
+
         prop_type = st.selectbox(
             "Property Type",
-            options=["Terrace House", "Condominium", "Apartment", "Semi D", "Bungalow", "Service Residence", "Flat",
-                     "Cluster House", "Town House"],
+            options=type_options,
+            index=type_idx,
             key=type_widget_key,
-            on_change=handle_manual_edit
+            on_change=handle_manual_edit,
         )
+
         estimated_size = st.number_input(
             "Estimated Built-up Size (sqft)",
-            min_value=200, max_value=20000, step=50,
+            min_value=200,
+            max_value=20000,
+            step=50,
             key=size_widget_key,
-            on_change=handle_manual_edit
+            on_change=handle_manual_edit,
         )
 
         use_default_tx = st.checkbox(
             "Auto-fill Transactions based on Area",
             key=chk_tx_key,
-            on_change=handle_manual_edit
+            on_change=handle_manual_edit,
         )
 
         historical_tx = int(state_area_lookup.get(state, {}).get(area, {}).get("Transactions", 16))
@@ -577,7 +631,8 @@ def render_input_form(form_key):
                 "Number of Transactions (Auto-filled)",
                 value=historical_tx,
                 disabled=True,
-                help="Locked to the historical median for this location. Uncheck the box above to edit manually."
+                key=f"disabled_tx_{form_key}",
+                help="Locked to the historical median for this location. Uncheck the box above to edit manually.",
             )
         else:
             if man_tx_key not in st.session_state:
@@ -585,9 +640,10 @@ def render_input_form(form_key):
 
             manual_tx = st.number_input(
                 "Number of Transactions",
-                min_value=0, max_value=5000,
+                min_value=0,
+                max_value=5000,
                 key=man_tx_key,
-                on_change=handle_manual_edit
+                on_change=handle_manual_edit,
             )
 
     submitted = st.button("Predict Price", use_container_width=True, key=f"btn_{form_key}")
@@ -600,7 +656,7 @@ def render_input_form(form_key):
             "Tenure": tenure,
             "Type": prop_type,
             "Estimated_Size": estimated_size,
-            "Transactions": manual_tx
+            "Transactions": manual_tx,
         }
 
     return user_features, state_area_lookup
