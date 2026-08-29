@@ -642,9 +642,12 @@ def render_input_form(form_key):
 
         tx_val = state_area_lookup.get(state, {}).get(area, {}).get("Transactions")
         historical_tx = int(tx_val or 16)
-        use_default_tx = st.session_state[keys["chk_tx"]]
+        use_default_tx = st.session_state.get(keys["chk_tx"], True)
 
         if use_default_tx:
+            st.session_state[keys["disabled_tx"]] = historical_tx
+            st.session_state[keys["man_tx"]] = historical_tx
+
             manual_tx = st.number_input(
                 "Number of Transactions",
                 value=historical_tx,
@@ -670,7 +673,7 @@ def render_input_form(form_key):
             key=keys["chk_tx"],
             on_change=handle_manual_edit,
             args=(keys,),
-            help="Uncheck this to manually input a custom transaction count.",
+            help="Check to auto-sync with history. Uncheck to enter a custom value.",
         )
         st.caption(
             "ℹ️ **Tip:** Transactions will automatically map based on historical data matching your selected area."
