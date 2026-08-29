@@ -539,6 +539,13 @@ def render_input_form(form_key):
     # 1. Setup and initialize valuable
     keys = get_form_keys(form_key)
     initialize_form_memory(keys)
+
+    current_state = st.session_state[keys["state"]]
+    valid_areas = sorted(list(state_area_lookup.get(current_state, {}).keys()))
+    if not st.session_state[keys["area"]] or st.session_state[keys["area"]] not in valid_areas:
+        if valid_areas:
+            st.session_state[keys["area"]] = valid_areas[0]
+
     st.info(
         "💡 **Tip:** Click any **Pin on the Map** or select a **Preset** below to auto-fill property details."
     )
