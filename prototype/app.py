@@ -45,7 +45,6 @@ def load_models():
 
 @st.cache_data
 def load_state_area_lookup():
-    """Loads the hierarchical State -> Area -> Features lookup table."""
     project_root = Path(__file__).resolve().parent.parent
     lookup_path = project_root / "data" / "processed" / "state_area_lookup_table.json"
 
@@ -369,105 +368,96 @@ def plot_market_comparison(state, prop_type, predicted_price, title="Market Benc
     st.pyplot(fig)
 
 
-def render_input_form(form_key):
-    state_area_lookup = load_state_area_lookup()
+# ---------------------------------------------------------
+# render_input_form modules
+# ---------------------------------------------------------
+def get_form_keys(form_key):
+    return {
+        "preset": f"preset_{form_key}",
+        "state": f"state_{form_key}",
+        "area": f"area_{form_key}",
+        "tenure": f"tenure_{form_key}",
+        "type": f"type_{form_key}",
+        "size": f"size_{form_key}",
+        "chk_tx": f"chk_tx_{form_key}",
+        "man_tx": f"man_tx_{form_key}",
+        "last_click": f"last_map_click_{form_key}",
+        "disabled_tx": f"disabled_tx_{form_key}",
+        "btn": f"btn_{form_key}"
+    }
 
-    available_states = sorted(list(state_area_lookup.keys()))
-    if not available_states:
-        available_states = ["Selangor", "Kuala Lumpur", "Johor", "Penang"]
 
-    st.info(
-        "💡 **Tip:** Click any **Pin on the Map** or select a **Preset** below to auto-fill the property location."
-    )
+def initialize_form_memory(keys):
+    if keys["preset"] not in st.session_state:
+        st.session_state[keys["preset"]] = "Custom Input (Manual / Map Click)"
+    if keys["state"] not in st.session_state:
+        st.session_state[keys["state"]] = "Selangor"
+    if keys["area"] not in st.session_state:
+        st.session_state[keys["area"]] = ""
+    if keys["tenure"] not in st.session_state:
+        st.session_state[keys["tenure"]] = "Freehold"
+    if keys["type"] not in st.session_state:
+        st.session_state[keys["type"]] = "Terrace House"
+    if keys["size"] not in st.session_state:
+        st.session_state[keys["size"]] = 1200
+    if keys["chk_tx"] not in st.session_state:
+        st.session_state[keys["chk_tx"]] = True
+    if keys["last_click"] not in st.session_state:
+        st.session_state[keys["last_click"]] = None
 
-    preset_key = f"preset_{form_key}"
-    state_widget_key = f"state_{form_key}"
-    area_widget_key = f"area_{form_key}"
-    tenure_widget_key = f"tenure_{form_key}"
-    type_widget_key = f"type_{form_key}"
-    size_widget_key = f"size_{form_key}"
-    chk_tx_key = f"chk_tx_{form_key}"
-    man_tx_key = f"man_tx_{form_key}"
-    last_click_key = f"last_map_click_{form_key}"
 
-    # ---------------------------------------------------------
-    # 1. Initialize Default Values
-    # ---------------------------------------------------------
-    if preset_key not in st.session_state:
-        st.session_state[preset_key] = "Custom Input (Manual / Map Click)"
-    if state_widget_key not in st.session_state:
-        st.session_state[state_widget_key] = "Selangor"
-    if area_widget_key not in st.session_state:
-        st.session_state[area_widget_key] = ""
-    if tenure_widget_key not in st.session_state:
-        st.session_state[tenure_widget_key] = "Freehold"
-    if type_widget_key not in st.session_state:
-        st.session_state[type_widget_key] = "Terrace House"
-    if size_widget_key not in st.session_state:
-        st.session_state[size_widget_key] = 1200
-    if chk_tx_key not in st.session_state:
-        st.session_state[chk_tx_key] = True
-    if last_click_key not in st.session_state:
-        st.session_state[last_click_key] = None
+def handle_preset_change(keys):
+    choice = st.session_state[keys["preset"]]
+    if choice == "Sample: Luxury Condo in KL":
+        st.session_state[keys["state"]] = "Kuala Lumpur"
+        st.session_state[keys["area"]] = "Mont Kiara"
+        st.session_state[keys["tenure"]] = "Freehold"
+        st.session_state[keys["type"]] = "Condominium"
+        st.session_state[keys["size"]] = 1450
+        st.session_state[keys["chk_tx"]] = False
+        st.session_state[keys["man_tx"]] = 45
+    elif choice == "Sample: Standard Terrace in Johor":
+        st.session_state[keys["state"]] = "Johor"
+        st.session_state[keys["area"]] = "Skudai"
+        st.session_state[keys["tenure"]] = "Freehold"
+        st.session_state[keys["type"]] = "Terrace House"
+        st.session_state[keys["size"]] = 1800
+        st.session_state[keys["chk_tx"]] = False
+        st.session_state[keys["man_tx"]] = 120
+    elif choice == "Sample: Affordable Flat in Penang":
+        st.session_state[keys["state"]] = "Penang"
+        st.session_state[keys["area"]] = "Ayer Itam"
+        st.session_state[keys["tenure"]] = "Leasehold"
+        st.session_state[keys["type"]] = "Flat"
+        st.session_state[keys["size"]] = 750
+        st.session_state[keys["chk_tx"]] = False
+        st.session_state[keys["man_tx"]] = 35
 
-    # ---------------------------------------------------------
-    # 2. Callbacks (Executed BEFORE widgets are rendered)
-    # ---------------------------------------------------------
-    def handle_preset_change():
-        choice = st.session_state[preset_key]
-        if choice == "Sample: Luxury Condo in KL":
-            st.session_state[state_widget_key] = "Kuala Lumpur"
-            st.session_state[area_widget_key] = "Mont Kiara"
-            st.session_state[tenure_widget_key] = "Freehold"
-            st.session_state[type_widget_key] = "Condominium"
-            st.session_state[size_widget_key] = 1450
-            st.session_state[chk_tx_key] = False
-            st.session_state[man_tx_key] = 45
-        elif choice == "Sample: Standard Terrace in Johor":
-            st.session_state[state_widget_key] = "Johor"
-            st.session_state[area_widget_key] = "Skudai"
-            st.session_state[tenure_widget_key] = "Freehold"
-            st.session_state[type_widget_key] = "Terrace House"
-            st.session_state[size_widget_key] = 1800
-            st.session_state[chk_tx_key] = False
-            st.session_state[man_tx_key] = 120
-        elif choice == "Sample: Affordable Flat in Penang":
-            st.session_state[state_widget_key] = "Penang"
-            st.session_state[area_widget_key] = "Ayer Itam"
-            st.session_state[tenure_widget_key] = "Leasehold"
-            st.session_state[type_widget_key] = "Flat"
-            st.session_state[size_widget_key] = 750
-            st.session_state[chk_tx_key] = False
-            st.session_state[man_tx_key] = 35
 
-    def handle_state_change():
-        st.session_state[preset_key] = "Custom Input (Manual / Map Click)"
-        new_state = st.session_state[state_widget_key]
-        areas = sorted(list(state_area_lookup.get(new_state, {}).keys()))
-        if areas:
-            st.session_state[area_widget_key] = areas[0]
+    # Rules
+def handle_state_change(keys, state_area_lookup):
+    st.session_state[keys["preset"]] = "Custom Input (Manual / Map Click)"
+    new_state = st.session_state[keys["state"]]
+    areas = sorted(list(state_area_lookup.get(new_state, {}).keys()))
+    if areas:
+        st.session_state[keys["area"]] = areas[0]
+def handle_manual_edit(keys):
+    st.session_state[keys["preset"]] = "Custom Input (Manual / Map Click)"
 
-    def handle_manual_edit():
-        st.session_state[preset_key] = "Custom Input (Manual / Map Click)"
 
-    # ---------------------------------------------------------
-    # 3. Reserve Space for Preset Dropdown
-    # ---------------------------------------------------------
-    preset_placeholder = st.empty()
-
-    # ---------------------------------------------------------
-    # 4. Interactive Map Section
-    # ---------------------------------------------------------
+def render_interactive_map(keys, form_key, state_area_lookup):
+    """Renders interactive Folium map and processes marker click events."""
     st.markdown("### 🗺️ Interactive Location Map")
     st.caption("Hover over or click on any marker pin to select that location.")
 
-    current_selected_state = st.session_state[state_widget_key]
-    current_selected_area = st.session_state.get(area_widget_key, "")
+    current_selected_state = st.session_state[keys["state"]]
+    current_selected_area = st.session_state.get(keys["area"], "")
 
-    # Set Map Center
     center_lat, center_lon, zoom_level = 4.2105, 101.9758, 6
-    if current_selected_state in state_area_lookup and current_selected_area in state_area_lookup[
-        current_selected_state]:
+    if (
+        current_selected_state in state_area_lookup
+        and current_selected_area in state_area_lookup[current_selected_state]
+    ):
         area_info = state_area_lookup[current_selected_state][current_selected_area]
         if area_info.get("lat") is not None and area_info.get("lon") is not None:
             center_lat, center_lon, zoom_level = area_info["lat"], area_info["lon"], 11
@@ -486,9 +476,18 @@ def render_input_form(form_key):
 
     for state_name, areas in state_area_lookup.items():
         for loc_name, coords in areas.items():
-            if isinstance(coords, dict) and coords.get("lat") is not None and coords.get("lon") is not None:
-                is_active = (loc_name == current_selected_area and state_name == current_selected_state)
-                icon_color, icon_type = ("red", "home") if is_active else ("blue", "info-sign")
+            if (
+                isinstance(coords, dict)
+                and coords.get("lat") is not None
+                and coords.get("lon") is not None
+            ):
+                is_active = (
+                    loc_name == current_selected_area
+                    and state_name == current_selected_state
+                )
+                icon_color, icon_type = (
+                    ("red", "home") if is_active else ("blue", "info-sign")
+                )
 
                 folium.Marker(
                     location=[coords["lat"], coords["lon"]],
@@ -505,108 +504,129 @@ def render_input_form(form_key):
         returned_objects=["last_object_clicked_popup"],
     )
 
-    # FIXED: Handle Pin Click Event with "Click Memory"
     if map_output and map_output.get("last_object_clicked_popup"):
         clicked_popup = map_output["last_object_clicked_popup"]
 
-        # Only process if this is a BRAND NEW click we haven't seen yet!
-        if clicked_popup != st.session_state[last_click_key]:
-            st.session_state[last_click_key] = clicked_popup
+        if clicked_popup != st.session_state[keys["last_click"]]:
+            st.session_state[keys["last_click"]] = clicked_popup
 
             try:
                 parts = clicked_popup.rsplit(" (", 1)
                 clicked_area_raw = parts[0].strip()
                 matched_state = parts[1].replace(")", "").strip()
 
-                if st.session_state.get(area_widget_key) != clicked_area_raw:
-                    st.session_state[state_widget_key] = matched_state
-                    st.session_state[area_widget_key] = clicked_area_raw
-                    st.session_state[preset_key] = "Custom Input (Manual / Map Click)"
-                    st.toast(f"📍 Selected from Map: **{clicked_area_raw}, {matched_state}**")
-
-                    st.rerun()  # Now perfectly safe to call!
+                if st.session_state.get(keys["area"]) != clicked_area_raw:
+                    st.session_state[keys["state"]] = matched_state
+                    st.session_state[keys["area"]] = clicked_area_raw
+                    st.session_state[keys["preset"]] = (
+                        "Custom Input (Manual / Map Click)"
+                    )
+                    st.toast(
+                        f"📍 Selected from Map: **{clicked_area_raw}, {matched_state}**"
+                    )
+                    st.rerun()
             except IndexError:
                 pass
 
-    # ---------------------------------------------------------
-    # 5. Draw the Preset Dropdown
-    # ---------------------------------------------------------
+
+def render_input_form(form_key):
+    state_area_lookup = load_state_area_lookup()
+
+    available_states = sorted(list(state_area_lookup.keys()))
+    if not available_states:
+        available_states = ["Selangor", "Kuala Lumpur", "Johor", "Penang"]
+
+    # 1. Setup and initialize valuable
+    keys = get_form_keys(form_key)
+    initialize_form_memory(keys)
+    st.info(
+        "💡 **Tip:** Click any **Pin on the Map** or select a **Preset** below to auto-fill property details."
+    )
+
+    # 2. Preset Placeholder
+    preset_placeholder = st.empty()
+
+    # 3. Interactive Location Map
+    render_interactive_map(keys, form_key, state_area_lookup)
+
+    # 4. Fill the Preset data Dropdown
     preset_placeholder.selectbox(
         "Auto Input Data (Optional):",
-        [
+        options=[
             "Custom Input (Manual / Map Click)",
             "Sample: Luxury Condo in KL",
             "Sample: Standard Terrace in Johor",
             "Sample: Affordable Flat in Penang",
         ],
-        key=preset_key,
+        key=keys["preset"],
         on_change=handle_preset_change,
+        args=(keys,),
     )
 
-    # ---------------------------------------------------------
-    # 6. Form Feature Inputs (WITH EXPLICIT INDEXING)
-    # ---------------------------------------------------------
+    # 5. Feature Inputs
     st.subheader("Property Features")
     col1, col2 = st.columns(2)
 
     with col1:
-        # Explicit Index Calculation for State
-        current_state = st.session_state.get(state_widget_key, "Selangor")
-        state_idx = available_states.index(current_state) if current_state in available_states else 0
-
         state = st.selectbox(
             "State",
             options=available_states,
-            index=state_idx,
-            key=state_widget_key,
+            key=keys["state"],
             on_change=handle_state_change,
+            args=(keys, state_area_lookup),
         )
 
         areas_in_state = sorted(list(state_area_lookup.get(state, {}).keys()))
         if not areas_in_state:
-            areas_in_state = ["Insufficient Data"]
+            areas_in_state = ["Insufficient historical data available"]
 
-        # Ensure area is valid, otherwise reset safely
-        current_area = st.session_state.get(area_widget_key, "")
-        if current_area not in areas_in_state:
-            current_area = areas_in_state[0]
-            st.session_state[area_widget_key] = current_area
-
-        # Explicit Index Calculation for Area
-        area_idx = areas_in_state.index(current_area) if current_area in areas_in_state else 0
+        if st.session_state[keys["area"]] not in areas_in_state:
+            st.session_state[keys["area"]] = areas_in_state[0]
 
         area = st.selectbox(
             "Area / Township",
             options=areas_in_state,
-            index=area_idx,
-            key=area_widget_key,
+            key=keys["area"],
             on_change=handle_manual_edit,
+            args=(keys,),
+            help="Select the specific town or neighborhood.",
         )
 
         tenure_options = ["Freehold", "Leasehold", "Freehold and Leasehold"]
-        current_tenure = st.session_state.get(tenure_widget_key, "Freehold")
-        tenure_idx = tenure_options.index(current_tenure) if current_tenure in tenure_options else 0
+        if st.session_state[keys["tenure"]] not in tenure_options:
+            st.session_state[keys["tenure"]] = "Freehold"
 
         tenure = st.selectbox(
             "Tenure",
             options=tenure_options,
-            index=tenure_idx,
-            key=tenure_widget_key,
+            key=keys["tenure"],
             on_change=handle_manual_edit,
+            args=(keys,),
+            help="Freehold = Ownership of land. Leasehold = Leased for a set period (e.g., 99 years).",
         )
 
     with col2:
-        type_options = ["Terrace House", "Condominium", "Apartment", "Semi D", "Bungalow", "Service Residence", "Flat",
-                        "Cluster House", "Town House"]
-        current_type = st.session_state.get(type_widget_key, "Terrace House")
-        type_idx = type_options.index(current_type) if current_type in type_options else 0
+        type_options = [
+            "Terrace House",
+            "Condominium",
+            "Apartment",
+            "Semi D",
+            "Bungalow",
+            "Service Residence",
+            "Flat",
+            "Cluster House",
+            "Town House",
+        ]
+        if st.session_state[keys["type"]] not in type_options:
+            st.session_state[keys["type"]] = "Terrace House"
 
         prop_type = st.selectbox(
             "Property Type",
             options=type_options,
-            index=type_idx,
-            key=type_widget_key,
+            key=keys["type"],
             on_change=handle_manual_edit,
+            args=(keys,),
+            help="The architectural style or classification of the property.",
         )
 
         estimated_size = st.number_input(
@@ -614,39 +634,50 @@ def render_input_form(form_key):
             min_value=200,
             max_value=20000,
             step=50,
-            key=size_widget_key,
+            key=keys["size"],
             on_change=handle_manual_edit,
+            args=(keys,),
+            help="A manual estimate of the property floor space in square feet.",
         )
 
-        use_default_tx = st.checkbox(
-            "Auto-fill Transactions based on Area",
-            key=chk_tx_key,
-            on_change=handle_manual_edit,
-        )
-
-        historical_tx = int(state_area_lookup.get(state, {}).get(area, {}).get("Transactions", 16))
+        tx_val = state_area_lookup.get(state, {}).get(area, {}).get("Transactions")
+        historical_tx = int(tx_val or 16)
+        use_default_tx = st.session_state[keys["chk_tx"]]
 
         if use_default_tx:
             manual_tx = st.number_input(
-                "Number of Transactions (Auto-filled)",
+                "Number of Transactions",
                 value=historical_tx,
                 disabled=True,
-                key=f"disabled_tx_{form_key}",
-                help="Locked to the historical median for this location. Uncheck the box above to edit manually.",
+                key=keys["disabled_tx"],
+                help="Locked to historical median. Uncheck below to customize.",
             )
         else:
-            if man_tx_key not in st.session_state:
-                st.session_state[man_tx_key] = historical_tx
+            if keys["man_tx"] not in st.session_state:
+                st.session_state[keys["man_tx"]] = historical_tx
 
             manual_tx = st.number_input(
                 "Number of Transactions",
                 min_value=0,
                 max_value=5000,
-                key=man_tx_key,
+                key=keys["man_tx"],
                 on_change=handle_manual_edit,
+                args=(keys,),
             )
 
-    submitted = st.button("Predict Price", use_container_width=True, key=f"btn_{form_key}")
+        st.checkbox(
+            "Auto-fill Transactions based on Area",
+            key=keys["chk_tx"],
+            on_change=handle_manual_edit,
+            args=(keys,),
+            help="Uncheck this to manually input a custom transaction count.",
+        )
+        st.caption(
+            "ℹ️ **Tip:** Transactions will automatically map based on historical data matching your selected area."
+        )
+
+    # 6. Submission Button
+    submitted = st.button("Predict Price", use_container_width=True, key=keys["btn"])
 
     user_features = None
     if submitted:
