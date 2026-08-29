@@ -393,7 +393,7 @@ def initialize_form_memory(keys):
     if keys["state"] not in st.session_state:
         st.session_state[keys["state"]] = "Selangor"
     if keys["area"] not in st.session_state:
-        st.session_state[keys["area"]] = ""
+        st.session_state[keys["area"]] = "KLCC"
     if keys["tenure"] not in st.session_state:
         st.session_state[keys["tenure"]] = "Freehold"
     if keys["type"] not in st.session_state:
@@ -446,7 +446,6 @@ def handle_manual_edit(keys):
 
 
 def render_interactive_map(keys, form_key, state_area_lookup):
-    """Renders interactive Folium map and processes marker click events."""
     st.markdown("### 🗺️ Interactive Location Map")
     st.caption("Hover over or click on any marker pin to select that location.")
 
@@ -607,9 +606,7 @@ def render_input_form(form_key):
             "Tenure",
             options=tenure_options,
             key=keys["tenure"],
-            on_change=handle_manual_edit,
-            args=(keys,),
-            help="Freehold = Ownership of land. Leasehold = Leased for a set period (e.g., 99 years).",
+            help="Freehold = Ownership of land. Leasehold = Leased for a set period.",
         )
 
     with col2:
@@ -631,8 +628,6 @@ def render_input_form(form_key):
             "Property Type",
             options=type_options,
             key=keys["type"],
-            on_change=handle_manual_edit,
-            args=(keys,),
             help="The architectural style or classification of the property.",
         )
 
@@ -642,8 +637,6 @@ def render_input_form(form_key):
             max_value=20000,
             step=50,
             key=keys["size"],
-            on_change=handle_manual_edit,
-            args=(keys,),
             help="A manual estimate of the property floor space in square feet.",
         )
 
@@ -671,15 +664,12 @@ def render_input_form(form_key):
                 min_value=0,
                 max_value=5000,
                 key=keys["man_tx"],
-                on_change=handle_manual_edit,
-                args=(keys,),
+                help="Manually set transaction volume.",
             )
 
         st.checkbox(
             "Auto-fill Transactions based on Area",
             key=keys["chk_tx"],
-            on_change=handle_manual_edit,
-            args=(keys,),
             help="Check to auto-sync with history. Uncheck to enter a custom value.",
         )
         st.caption(
