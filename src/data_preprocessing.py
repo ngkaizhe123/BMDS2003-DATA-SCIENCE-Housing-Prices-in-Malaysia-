@@ -7,6 +7,7 @@ from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 import time
 
+
 def handle_missing_values(
     df: pd.DataFrame, target_col: str = "Median_Price"
 ) -> pd.DataFrame:
@@ -251,7 +252,7 @@ if __name__ == "__main__":
                 "Transactions": med_tx,
                 "Area_Transaction_Density": density,
                 "lat": lat,
-                "lon": lon
+                "lon": lon,
             }
 
         state_area_lookup[state] = area_dict
