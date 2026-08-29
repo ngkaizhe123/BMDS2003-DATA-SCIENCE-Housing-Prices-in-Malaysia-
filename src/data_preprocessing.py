@@ -3,6 +3,9 @@ import numpy as np
 import sys
 from pathlib import Path
 import json
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
+import time
 
 
 def handle_missing_values(
@@ -186,12 +189,20 @@ if __name__ == "__main__":
     # =========================================================
     # 4. Generate LookUp table
     # =========================================================
-    print("Generating State-Area lookup table from RAW data...")
+    print("Generating State-Area lookup table and fetching Map Coordinates...")
 
+    # Initialize the Geocoder
+    geolocator = Nominatim(user_agent="malaysia_property_predictor")
     state_area_lookup = {}
 
     # Calculate total transactions from raw data for accurate density
     total_tx = raw_df["Transactions"].sum()
+
+    # --- Tracking Counters ---
+    total_areas = 0
+    successful_geocodes = 0
+    failed_geocodes = 0
+    skipped_areas = 0
 
     # Iterate through all original states
     for state in raw_df["State"].dropna().unique():
@@ -199,7 +210,9 @@ if __name__ == "__main__":
 
         area_dict = {}
         for area, group in state_areas.groupby("Area"):
-            # Get median transactions, fallback to 16.0 if NaN
+            total_areas += 1
+
+            # Calculate Transactions and Density
             med_tx = group["Transactions"].median()
             med_tx = med_tx if pd.notna(med_tx) else 16.0
 
@@ -207,9 +220,39 @@ if __name__ == "__main__":
             area_tx_sum = group["Transactions"].sum()
             density = area_tx_sum / total_tx if total_tx > 0 else 0.005
 
+            # --- FETCH LATITUDE AND LONGITUDE ---
+            lat, lon = None, None
+
+            if "Other_" not in area and "Other_" not in state:
+                query = f"{area}, {state}, Malaysia"
+                try:
+                    location = geolocator.geocode(query, timeout=10)
+                    if location:
+                        lat, lon = location.latitude, location.longitude
+                        print(f"🗺️ Found: {query} -> {lat}, {lon}")
+                        successful_geocodes += 1
+                    else:
+                        print(f"❌ Not Found: {query}")
+                        failed_geocodes += 1
+                except GeocoderTimedOut:
+                    print(f"⚠️ Timeout: {query}")
+                    failed_geocodes += 1
+                except Exception as e:
+                    print(f"⚠️ Error on {query}: {e}")
+                    failed_geocodes += 1
+
+                # Sleep to respect OpenStreetMap's 1-request-per-second rule
+                time.sleep(1.2)
+            else:
+                # Keep track of areas skipped because they are generic "Other_" buckets
+                skipped_areas += 1
+
+            # Store the data including coordinates
             area_dict[area] = {
                 "Transactions": med_tx,
                 "Area_Transaction_Density": density,
+                "lat": lat,
+                "lon": lon,
             }
 
         state_area_lookup[state] = area_dict
@@ -218,4 +261,14 @@ if __name__ == "__main__":
     with open(lookup_path, "w") as f:
         json.dump(state_area_lookup, f, indent=4)
 
-    print(f"✅ Lookup table successfully saved to {lookup_path}")
+    # --- Summary Report ---
+    print("\n" + "=" * 40)
+    print("📍 GEOCODING SUMMARY REPORT")
+    print("=" * 40)
+    print(f"Total Unique Areas Processed : {total_areas}")
+    print(f"✅ Successfully Found         : {successful_geocodes}")
+    print(f"❌ Failed / Not Found         : {failed_geocodes}")
+    print(f"⏭️ Skipped ('Other_')         : {skipped_areas}")
+    print("=" * 40 + "\n")
+
+    print(f"✅ Lookup table with Coordinates successfully saved to {lookup_path}")
