@@ -383,7 +383,7 @@ def get_form_keys(form_key):
         "man_tx": f"man_tx_{form_key}",
         "last_click": f"last_map_click_{form_key}",
         "disabled_tx": f"disabled_tx_{form_key}",
-        "btn": f"btn_{form_key}"
+        "btn": f"btn_{form_key}",
     }
 
 
@@ -433,14 +433,17 @@ def handle_preset_change(keys):
         st.session_state[keys["chk_tx"]] = False
         st.session_state[keys["man_tx"]] = 35
 
-
     # Rules
+
+
 def handle_state_change(keys, state_area_lookup):
     st.session_state[keys["preset"]] = "Custom Input (Manual / Map Click)"
     new_state = st.session_state[keys["state"]]
     areas = sorted(list(state_area_lookup.get(new_state, {}).keys()))
     if areas:
         st.session_state[keys["area"]] = areas[0]
+
+
 def handle_manual_edit(keys):
     st.session_state[keys["preset"]] = "Custom Input (Manual / Map Click)"
 
@@ -541,7 +544,10 @@ def render_input_form(form_key):
 
     current_state = st.session_state[keys["state"]]
     valid_areas = sorted(list(state_area_lookup.get(current_state, {}).keys()))
-    if not st.session_state[keys["area"]] or st.session_state[keys["area"]] not in valid_areas:
+    if (
+        not st.session_state[keys["area"]]
+        or st.session_state[keys["area"]] not in valid_areas
+    ):
         if valid_areas:
             st.session_state[keys["area"]] = valid_areas[0]
 
